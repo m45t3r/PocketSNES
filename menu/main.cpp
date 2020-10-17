@@ -64,15 +64,7 @@ u32 SamplesDoneThisFrame = 0;
 
 void S9xGenerateSound (void)
 {
-	so.err_counter += so.err_rate;
-	if ((Settings.SoundSync >= 2 && so.err_counter >= FIXED_POINT)
-	 || (Settings.SoundSync == 1 && so.err_counter >= FIXED_POINT * 128))
-	{
-		u32 SamplesThisRun = so.err_counter >> FIXED_POINT_SHIFT;
-		so.err_counter &= FIXED_POINT_REMAINDER;
-		sal_AudioGenerate(SamplesThisRun);
-		SamplesDoneThisFrame += SamplesThisRun;
-	}
+	sal_AudioGenerate(FIXED_POINT_SHIFT);
 }
 
 void S9xSetPalette ()
@@ -429,7 +421,7 @@ void S9xLoadSRAM (void)
 }
 
 static u32 LastAudioRate = 0;
-static u32 LastStereo = 0;
+// static u32 LastStereo = 0;
 static u32 LastHz = 0;
 
 static
@@ -445,17 +437,9 @@ int Run(int sound)
 	sal_TimerInit(Settings.FrameTime);
 
 	if (sound) {
-		/*
-		Settings.SoundPlaybackRate = mMenuOptions.soundRate;
-		Settings.Stereo = mMenuOptions.stereo ? TRUE : FALSE;
-		*/
-#ifndef FOREVER_16_BIT_SOUND
-		Settings.SixteenBitSound=true;
-#endif
-
 		if (LastAudioRate != mMenuOptions.soundRate ||
-			LastStereo != mMenuOptions.stereo ||
-			LastHz != (u32)Memory.ROMFramesPerSecond)
+			// LastStereo != mMenuOptions.stereo ||
+			LastHz != Memory.ROMFramesPerSecond)
 		{
 			if (LastAudioRate != 0)
 			{
@@ -468,7 +452,7 @@ int Run(int sound)
 						mMenuOptions.stereo, sal_AudioGetSamplesPerFrame() * sal_AudioGetBytesPerSample());
 			S9xSetPlaybackRate(mMenuOptions.soundRate);
 			LastAudioRate = mMenuOptions.soundRate;
-			LastStereo = mMenuOptions.stereo;
+			// LastStereo = mMenuOptions.stereo;
 			LastHz = Memory.ROMFramesPerSecond;
 		}
 		sal_AudioSetMuted(0);
@@ -486,7 +470,6 @@ int Run(int sound)
 		if (SamplesDoneThisFrame < sal_AudioGetSamplesPerFrame())
 			sal_AudioGenerate(sal_AudioGetSamplesPerFrame() - SamplesDoneThisFrame);
 		SamplesDoneThisFrame = 0;
-		so.err_counter = 0;
   	}
 
 	sal_AudioPause();
@@ -531,11 +514,10 @@ int SnesInit()
 
 	Settings.JoystickEnabled = FALSE;
 	Settings.SoundPlaybackRate = 44100;
-	Settings.Stereo = TRUE;
 	Settings.SoundBufferSize = 0;
 	Settings.CyclesPercentage = 100;
 	Settings.DisableSoundEcho = FALSE;
-	Settings.APUEnabled = Settings.NextAPUEnabled = TRUE;
+	Settings.APUEnabled = TRUE;
 	Settings.H_Max = SNES_CYCLES_PER_SCANLINE;
 	Settings.SkipFrames = AUTO_FRAMERATE;
 	Settings.Shutdown = Settings.ShutdownMaster = TRUE;

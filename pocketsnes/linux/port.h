@@ -107,10 +107,6 @@ typedef short			int16_32;
 #define FASTCALL
 
 #define PIXEL_FORMAT RGB565
-// #define FOREVER_16_BIT
-// The above is used to disable the 16-bit graphics mode checks sprinkled
-// throughout the code, if the pixel format is always 16-bit.
-// #define FOREVER_16_BIT_SOUND
 
 #define CHECK_SOUND()
 #define VOID void

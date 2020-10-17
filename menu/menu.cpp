@@ -38,16 +38,14 @@ extern "C" void S9xSaveSRAM(int showWarning);
 									
 void DefaultMenuOptions(void)
 {
-	// mMenuOptions->frameSkip=0;   //auto
-	mMenuOptions->frameSkip=1;   //0
+	mMenuOptions->frameSkip=1;
 	mMenuOptions->soundEnabled = 1; 
 	mMenuOptions->volume=25; 
 	mMenuOptions->cpuSpeed=336; 
 	mMenuOptions->country=0;
 	mMenuOptions->showFps=0;
-	// mMenuOptions->soundRate=22050; //44100;
 	mMenuOptions->soundRate=44100;
-	mMenuOptions->stereo=0;
+	// mMenuOptions->stereo=0;
 	mMenuOptions->fullScreen=3;
 	mMenuOptions->autoSaveSram=1;
 	mMenuOptions->soundSync=1;
@@ -1062,11 +1060,11 @@ void SettingsMenuUpdateText(s32 menu_index)
 			sprintf(mMenuText[SETTINGS_MENU_SOUND_RATE],"Sound rate                %5d",mMenuOptions->soundRate);
 			break;
 
+#if 0
 		case SETTINGS_MENU_SOUND_STEREO:
 			sprintf(mMenuText[SETTINGS_MENU_SOUND_STEREO], "Stereo                      %s", mMenuOptions->stereo ? " ON" : "OFF");
 			break;
 
-#if 0
 		case SETTINGS_MENU_CPU_SPEED:		
 			sprintf(mMenuText[SETTINGS_MENU_CPU_SPEED],"Cpu Speed:                  %d",mMenuOptions->cpuSpeed);
 			break;
@@ -1162,7 +1160,7 @@ void SettingsMenuUpdateTextAll(void)
 {
 //	SettingsMenuUpdateText(SETTINGS_MENU_CPU_SPEED);
 	SettingsMenuUpdateText(SETTINGS_MENU_SOUND_ON);
-	SettingsMenuUpdateText(SETTINGS_MENU_SOUND_STEREO);
+//	SettingsMenuUpdateText(SETTINGS_MENU_SOUND_STEREO);
 	SettingsMenuUpdateText(SETTINGS_MENU_SOUND_RATE);
 //	SettingsMenuUpdateText(SETTINGS_MENU_SOUND_VOL);
 	SettingsMenuUpdateText(SETTINGS_MENU_FRAMESKIP);
@@ -1339,10 +1337,12 @@ s32 SettingsMenu(void)
 					SettingsMenuUpdateText(SETTINGS_MENU_SOUND_ON);
 					break;
 
+#if 0
 				case SETTINGS_MENU_SOUND_STEREO:
 					mMenuOptions->stereo^=1;
 					SettingsMenuUpdateText(SETTINGS_MENU_SOUND_STEREO);
 					break;
+#endif
 
 				case SETTINGS_MENU_AUTO_SAVE_SRAM:
 					mMenuOptions->autoSaveSram^=1;
