@@ -108,6 +108,7 @@ static u32 sal_Input(int held)
 			case SDL_KEYDOWN:
 				switch (event.key.keysym.sym) {
 					case SDLK_HOME:
+					case SDLK_RCTRL:
 						extraKeys |= SAL_INPUT_MENU;
 						break;
 					default:
