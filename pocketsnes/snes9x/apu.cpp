@@ -103,8 +103,6 @@ int spc_is_dumping_temp;
 uint8 spc_dump_dsp[0x100]; 
 
 extern int32  NoiseFreq       [32];
-extern uint16 DecreaseRateExp [32];
-extern uint16 IncreaseRate    [32];
 #ifdef DEBUGGER
 void S9xTraceSoundDSP (const char *s, int i1 = 0, int i2 = 0, int i3 = 0,
 					   int i4 = 0, int i5 = 0, int i6 = 0, int i7 = 0);
@@ -683,17 +681,17 @@ void S9xFixEnvelope (int channel, uint8 gain, uint8 adsr1, uint8 adsr2)
 			if(S9xSetSoundMode(channel, (gain & 0x20) ?
 							   MODE_INCREASE_BENT_LINE :
 							   MODE_INCREASE_LINEAR))
-				S9xSetEnvelopeRate(channel, IncreaseRate [gain & 0x1f], 1, 127, (3 << 28) | gain);
+				S9xSetEnvelopeRate(channel, gain, 1, 127, (3 << 28) | gain);
 		}
 		else if (gain & 0x20)
 		{
 			if(S9xSetSoundMode(channel, MODE_DECREASE_EXPONENTIAL))
-				S9xSetEnvelopeRate(channel, DecreaseRateExp [gain & 0x1f] / 2, -1, 0, (4 << 28) | gain);
+				S9xSetEnvelopeRate(channel, gain, -1, 0, (4 << 28) | gain);
 		}
 		else
 		{
 			if (S9xSetSoundMode(channel, MODE_DECREASE_LINEAR))
-				S9xSetEnvelopeRate(channel, IncreaseRate [gain & 0x1f], -1, 0, (3 << 28) | gain);
+				S9xSetEnvelopeRate(channel, gain, -1, 0, (3 << 28) | gain);
 		}
     }
 }
