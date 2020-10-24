@@ -25,7 +25,7 @@ CFLAGS += -DFAST_LSB_WORD_ACCESS
 CFLAGS += $(SDL_CFLAGS)
 ifdef PROFILE_GEN
 CFLAGS += -fprofile-generate -fprofile-dir=/media/data/local/home/profile/pocketsnes
-else
+else ifdef PROFILE_USE
 CFLAGS += -fprofile-use -fprofile-dir=./profile
 endif
 
