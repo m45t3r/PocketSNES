@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h> 
 #include "unzip.h"
 #include "zip.h"
 #include "menu.h"
@@ -321,41 +322,66 @@ const char *S9xGetFilenameInc (const char *e)
      return e;
 }
 
-#define MAX_AUDIO_FRAMESKIP 5
+#define MAX_AUTO_FRAMESKIP 5
+
+inline void timespec_sub(struct timespec *diff, const struct timespec *left, const struct timespec *right)
+{
+	diff->tv_sec = left->tv_sec - right->tv_sec;
+	diff->tv_nsec = left->tv_nsec - right->tv_nsec;
+}
 
 void S9xSyncSpeed(void)
 {
 	if (IsPreviewingState())
 		return;
 
-	if (Settings.SkipFrames == AUTO_FRAMERATE)
-	{
-		if (sal_AudioGetFramesBuffered() < sal_AudioGetMinFrames()
-		 && ++IPPU.SkippedFrames < MAX_AUDIO_FRAMESKIP)
-		{
-			IPPU.RenderThisFrame = FALSE;
-		}
-		else
-		{
-			IPPU.RenderThisFrame = TRUE;
-			IPPU.SkippedFrames = 0;
-		}
-	}
-	else
-	{
-		if (++IPPU.SkippedFrames >= Settings.SkipFrames + 1)
-		{
-			IPPU.RenderThisFrame = TRUE;
-			IPPU.SkippedFrames = 0;
-		}
-		else
-		{
-			IPPU.RenderThisFrame = FALSE;
-		}
-	}
+	if (Settings.SkipFrames == AUTO_FRAMERATE) {
+		static struct timespec next1 = {0, 0};
+		struct timespec now, diff;
 
-	while (sal_AudioGetFramesBuffered() >= sal_AudioGetMaxFrames())
-		usleep(1000);
+		while (clock_gettime(CLOCK_MONOTONIC, &now) < 0)
+			;
+		if (next1.tv_sec == 0) {
+			next1 = now;
+			next1.tv_nsec += Settings.FrameTime * 1000;
+		}
+
+		timespec_sub(&diff, &next1, &now);
+
+		if (diff.tv_nsec > 0) {
+			if (IPPU.SkippedFrames == 0) {
+				CHECK_SOUND();
+				nanosleep(&diff, NULL);
+				while (clock_gettime(CLOCK_MONOTONIC, &now) < 0)
+					;
+			}
+			IPPU.RenderThisFrame = TRUE;
+			IPPU.SkippedFrames = 0;
+		} else {
+			if (IPPU.SkippedFrames < MAX_AUTO_FRAMESKIP) {
+				IPPU.SkippedFrames++;
+				IPPU.RenderThisFrame = FALSE;
+			} else {
+				IPPU.RenderThisFrame = TRUE;
+				IPPU.SkippedFrames = 0;
+				next1 = now;
+			}
+		}
+		next1.tv_nsec += Settings.FrameTime * 1000;
+		if (next1.tv_nsec >= 1000000000) {
+			next1.tv_sec += next1.tv_nsec / 1000000000;
+			next1.tv_nsec %= 1000000000;
+		}
+	} else {
+		if (++IPPU.FrameSkip >= Settings.SkipFrames) {
+			IPPU.FrameSkip = 0;
+			IPPU.SkippedFrames = 0;
+			IPPU.RenderThisFrame = TRUE;
+		} else {
+			IPPU.SkippedFrames++;
+			IPPU.RenderThisFrame = FALSE;
+		}
+	}
 }
 
 const char *S9xBasename (const char *f)
@@ -456,8 +482,6 @@ int Run(int sound)
   	{
 		//Run SNES for one glorious frame
 		S9xMainLoop ();
-
-		sal_AudioGenerate(sal_AudioGetSamplesPerFrame());
 	}
 
 	sal_AudioPause();
