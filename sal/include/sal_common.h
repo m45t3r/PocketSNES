@@ -70,7 +70,7 @@ void sal_VideoPaletteSet(u32 index, u32 color);
 void sal_VideoPaletteSync();
 void sal_VideoBitmapScale(int startx, int starty, int viswidth, int visheight, int newwidth, int newheight,int pitch, u16 *src, u16 *dst);
 
-s32 sal_AudioInit(s32 rate, s32 bits, s32 stereo, s32 Hz);
+s32 sal_AudioInit(s32 rate, s32 bits, s32 Hz);
 void sal_AudioPause(void);
 void sal_AudioResume(void);
 void sal_AudioClose(void);

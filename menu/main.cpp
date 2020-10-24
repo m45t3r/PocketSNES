@@ -60,16 +60,12 @@ void S9xExit ()
 {
 }
 
-u32 SamplesDoneThisFrame = 0;
-
 void S9xGenerateSound (void)
 {
-	sal_AudioGenerate(FIXED_POINT_SHIFT);
 }
 
 void S9xSetPalette ()
 {
-
 }
 
 void S9xExtraUsage ()
@@ -421,7 +417,6 @@ void S9xLoadSRAM (void)
 }
 
 static u32 LastAudioRate = 0;
-// static u32 LastStereo = 0;
 static u32 LastHz = 0;
 
 static
@@ -438,21 +433,16 @@ int Run(int sound)
 
 	if (sound) {
 		if (LastAudioRate != mMenuOptions.soundRate ||
-			// LastStereo != mMenuOptions.stereo ||
 			LastHz != Memory.ROMFramesPerSecond)
 		{
 			if (LastAudioRate != 0)
 			{
 				sal_AudioClose();
 			}
-			sal_AudioInit(mMenuOptions.soundRate, 16,
-						mMenuOptions.stereo, Memory.ROMFramesPerSecond);
-
-			S9xInitSound (mMenuOptions.soundRate,
-						mMenuOptions.stereo, sal_AudioGetSamplesPerFrame() * sal_AudioGetBytesPerSample());
+			sal_AudioInit(mMenuOptions.soundRate, 16, Memory.ROMFramesPerSecond);
+			S9xInitSound(mMenuOptions.soundRate, TRUE, sal_AudioGetSamplesPerFrame() * sal_AudioGetBytesPerSample());
 			S9xSetPlaybackRate(mMenuOptions.soundRate);
 			LastAudioRate = mMenuOptions.soundRate;
-			// LastStereo = mMenuOptions.stereo;
 			LastHz = Memory.ROMFramesPerSecond;
 		}
 		sal_AudioSetMuted(0);
@@ -467,10 +457,8 @@ int Run(int sound)
 		//Run SNES for one glorious frame
 		S9xMainLoop ();
 
-		if (SamplesDoneThisFrame < sal_AudioGetSamplesPerFrame())
-			sal_AudioGenerate(sal_AudioGetSamplesPerFrame() - SamplesDoneThisFrame);
-		SamplesDoneThisFrame = 0;
-  	}
+		sal_AudioGenerate(sal_AudioGetSamplesPerFrame());
+	}
 
 	sal_AudioPause();
 
