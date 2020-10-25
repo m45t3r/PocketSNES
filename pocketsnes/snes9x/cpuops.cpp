@@ -3415,6 +3415,29 @@ inline void CPUShutdown()
 #define CPUShutdown()
 #endif
 
+#ifndef NO_SPEEDHACKS
+/* From the speed-hacks branch of CatSFC */
+static inline void ForceShutdown(void)
+{
+#ifndef SA1_OPCODES
+   CPU.WaitAddress = NULL;
+   CPU.Cycles = CPU.NextEvent;
+   if (IAPU.APUExecuting)
+   {
+      ICPU.CPUExecuting = false;
+      do
+      {
+         APU_EXECUTE1();
+      } while (APU.Cycles < CPU.NextEvent);
+      ICPU.CPUExecuting = true;
+   }
+#else
+   SA1.Executing = false;
+   SA1.CPUExecuting = false;
+#endif
+}
+#endif
+
 /* BCC */
 static void Op90 (void)
 {
@@ -4941,19 +4964,19 @@ static void Op40 (void)
     PullW (ICPU.Registers.PC);
     if (!CheckEmulation())
     {
-	PullB (ICPU.Registers.PB);
-	ICPU.ShiftedPB = ICPU.Registers.PB << 16;
+        PullB (ICPU.Registers.PB);
+        ICPU.ShiftedPB = ICPU.Registers.PB << 16;
     }
     else
     {
-	SetFlags (MemoryFlag | IndexFlag);
-	missing.emulate6502 = 1;
+        SetFlags (MemoryFlag | IndexFlag);
+        missing.emulate6502 = 1;
     }
     S9xSetPCBase (ICPU.ShiftedPB + ICPU.Registers.PC);
     if (CheckIndex ())
     {
-	ICPU.Registers.XH = 0;
-	ICPU.Registers.YH = 0;
+        ICPU.Registers.XH = 0;
+        ICPU.Registers.YH = 0;
     }
 #ifndef SA1_OPCODES
     CPU.Cycles += TWO_CYCLES;
@@ -4968,74 +4991,191 @@ static void Op40 (void)
 // WAI
 static void OpCB (void)
 {
-
-// Ok, let's just C-ify the ASM versions separately.
 #ifdef SA1_OPCODES
     SA1.WaitingForInterrupt = TRUE;
     SA1.PC--;
-#if 0
-// XXX: FIXME
-    if(Settings.Shutdown){
-        SA1.Cycles = SA1.NextEvent;
+#else // SA1_OPCODES
+    CPU.WaitingForInterrupt = TRUE;
+    CPU.PC--;
+#ifdef CPU_SHUTDOWN
+    if (Settings.Shutdown)
+    {
+        CPU.Cycles = CPU.NextEvent;
         if (IAPU.APUExecuting)
         {
-            SA1.Executing = FALSE;
+            ICPU.CPUExecuting = FALSE;
             do
             {
-                APU_EXECUTE1 (,         } while (APU.Cycles < SA1.NextEvent,         SA1.Executing = TRUE;
+                APU_EXECUTE1 ();
+            } while (APU.Cycles < CPU.NextEvent);
+            ICPU.CPUExecuting = TRUE;
         }
     }
-#endif
-#else // SA1_OPCODES
-#if 0
-
-
-    if (CPU.IRQActive)
-    {
-#ifndef SA1_OPCODES
-	CPU.Cycles += TWO_CYCLES;
-#endif
-    }
     else
-#endif
     {
-	CPU.WaitingForInterrupt = TRUE;
-	CPU.PC--;
-#ifdef CPU_SHUTDOWN
-	if (Settings.Shutdown)
-	{
-	    CPU.Cycles = CPU.NextEvent;
-	    if (IAPU.APUExecuting)
-	    {
-		ICPU.CPUExecuting = FALSE;
-		do
-		{
-		    APU_EXECUTE1 ();
-		} while (APU.Cycles < CPU.NextEvent);
-		ICPU.CPUExecuting = TRUE;
-	    }
-	}
-	else
-        {
 #ifndef SA1_OPCODES
-            CPU.Cycles += TWO_CYCLES;
+        CPU.Cycles += TWO_CYCLES;
 #endif
     }
 #endif
-    }
 #endif // SA1_OPCODES
 }
 
-// STP
-static void OpDB (void)
+/* Usually an STP opcode; SNESAdvance speed hack, not implemented in Snes9xTYL | Snes9x-Euphoria (from the speed-hacks branch of CatSFC) */
+static void OpDB(void)
 {
-    CPU.PC--;
-    CPU.Flags |= DEBUG_MODE_FLAG;
+#ifndef NO_SPEEDHACKS
+   int8_t BranchOffset;
+   uint8_t NextByte = *CPU.PC++;
+
+   ForceShutdown();
+
+   BranchOffset = (NextByte & 0x7F) | ((NextByte & 0x40) << 1);
+   /* ^ -64 .. +63, sign extend bit 6 into 7 for unpacking */
+   OpAddress = ((int32_t) (CPU.PC - CPU.PCBase) + BranchOffset) & 0xffff;
+
+   switch (NextByte & 0x80)
+   {
+   case 0x00: /* BNE */
+      BranchCheck0();
+      if (!CheckZero ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0x80: /* BEQ */
+      BranchCheck0();
+      if (CheckZero ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   }
+#else
+     CPU.PC--;
+     CPU.Flags |= DEBUG_MODE_FLAG;
+#endif
 }
 
-// Reserved S9xOpcode
-static void Op42 (void)
+/* SNESAdvance speed hack, as implemented in Snes9xTYL / Snes9x-Euphoria (from the speed-hacks branch of CatSFC) */
+static void Op42(void)
 {
+#ifndef NO_SPEEDHACKS
+   int8_t BranchOffset;
+   uint8_t NextByte = *CPU.PC++;
+
+   ForceShutdown();
+
+   BranchOffset = 0xF0 | (NextByte & 0xF); /* always negative */
+   OpAddress = ((int32_t) (CPU.PC - CPU.PCBase) + BranchOffset) & 0xffff;
+
+   switch (NextByte & 0xF0)
+   {
+   case 0x10: /* BPL */
+      BranchCheck0();
+      if (!CheckNegative ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0x30: /* BMI */
+      BranchCheck0();
+      if (CheckNegative ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0x50: /* BVC */
+      BranchCheck0();
+      if (!CheckOverflow ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0x70: /* BVS */
+      BranchCheck0();
+      if (CheckOverflow ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0x80: /* BRA */
+      CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+      CPU.Cycles += ONE_CYCLE;
+#endif
+      CPUShutdown ();
+      return;
+   case 0x90: /* BCC */
+      BranchCheck0();
+      if (!CheckCarry ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0xB0: /* BCS */
+      BranchCheck0();
+      if (CheckCarry ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0xD0: /* BNE */
+      BranchCheck0();
+      if (!CheckZero ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   case 0xF0: /* BEQ */
+      BranchCheck0();
+      if (CheckZero ())
+      {
+         CPU.PC = CPU.PCBase + OpAddress;
+#ifndef SA1_OPCODES
+         CPU.Cycles += ONE_CYCLE;
+#endif
+         CPUShutdown ();
+      }
+      return;
+   }
+#endif
 }
 
 /*****************************************************************************/

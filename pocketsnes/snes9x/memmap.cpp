@@ -644,11 +644,61 @@ again:
 		S9xMessage(S9X_ERROR,S9X_ROM_CONFUSING_FORMAT_INFO, "Warning! Hacked Dump!");
 	}
 
-    int orig_hi_score, orig_lo_score;
-    int hi_score, lo_score;
+#ifndef NO_SPEEDHACKS
+	/* SNESAdvance speed hacks (from the speed-hacks branch of CatSFC) */
+	if (strncmp("YOSHI'S ISLAND", (char *) &Memory.ROM[0x7FC0], 14) == 0)
+	{
+		Memory.ROM[0x0000F4] = 0x42;
+		Memory.ROM[0x0000F5] = 0x3B;
+	}
+	else if (strncmp("SUPER MARIOWORLD", (char *) &Memory.ROM[0x7FC0], 16) == 0)
+	{
+		Memory.ROM[0x00006D] = 0x42;
+	}
+	else if (strncmp("ALL_STARS + WORLD", (char *) &Memory.ROM[0x7FC0], 17) == 0)
+	{
+		Memory.ROM[0x0003D0] = 0x42;
+		Memory.ROM[0x0003D1] = 0x5B;
+		Memory.ROM[0x018522] = 0x42;
+		Memory.ROM[0x018523] = 0x5B;
+		Memory.ROM[0x02C804] = 0x42;
+		Memory.ROM[0x02C805] = 0xBA;
+		Memory.ROM[0x0683B5] = 0x42;
+		Memory.ROM[0x0683B6] = 0x5B;
+		Memory.ROM[0x0696AC] = 0x42;
+		Memory.ROM[0x0696AD] = 0xBA;
+		Memory.ROM[0x089233] = 0xDB;
+		Memory.ROM[0x089234] = 0x61;
+		Memory.ROM[0x0895DF] = 0x42;
+		Memory.ROM[0x0895E0] = 0x5B;
+		Memory.ROM[0x0A7A9D] = 0x42;
+		Memory.ROM[0x0A7A9E] = 0xBA;
+		Memory.ROM[0x1072E7] = 0x42;
+		Memory.ROM[0x1072E8] = 0xD9;
+		Memory.ROM[0x107355] = 0x42;
+		Memory.ROM[0x107356] = 0x5B;
+		Memory.ROM[0x1073CF] = 0x42;
+		Memory.ROM[0x1073D0] = 0x5B;
+		Memory.ROM[0x107443] = 0x42;
+		Memory.ROM[0x107444] = 0x5B;
+		Memory.ROM[0x107498] = 0x42;
+		Memory.ROM[0x107499] = 0x5B;
+		Memory.ROM[0x107505] = 0x42;
+		Memory.ROM[0x107506] = 0x5B;
+		Memory.ROM[0x107539] = 0x42;
+		Memory.ROM[0x10753A] = 0x5B;
+		Memory.ROM[0x107563] = 0x42;
+		Memory.ROM[0x107564] = 0x5B;
+		Memory.ROM[0x18041D] = 0x42;
+		Memory.ROM[0x18041E] = 0x79;
+	}
+#endif
+
+	int orig_hi_score, orig_lo_score;
+	int hi_score, lo_score;
 	
-    orig_hi_score = hi_score = ScoreHiROM (FALSE);
-    orig_lo_score = lo_score = ScoreLoROM (FALSE);
+	orig_hi_score = hi_score = ScoreHiROM (FALSE);
+	orig_lo_score = lo_score = ScoreLoROM (FALSE);
     
     if (HeaderCount == 0 && !Settings.ForceNoHeader &&
 		((hi_score > lo_score && ScoreHiROM (TRUE) > hi_score) ||
