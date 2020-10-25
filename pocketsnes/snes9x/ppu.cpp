@@ -894,17 +894,12 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 		  case 0x2174: case 0x2175: case 0x2176: case 0x2177:
 		  case 0x2178: case 0x2179: case 0x217a: case 0x217b:
 		  case 0x217c: case 0x217d: case 0x217e: case 0x217f:
-#ifdef SPCTOOL
-			_SPCInPB (Address & 3, Byte);
-#else	
-			//	CPU.Flags |= DEBUG_MODE_FLAG;
 			Memory.FillRAM [Address] = Byte;
 			IAPU.RAM [(Address & 3) + 0xf4] = Byte;
 #ifdef SPC700_SHUTDOWN
 			IAPU.APUExecuting = Settings.APUEnabled;
 			IAPU.WaitCounter++;
 #endif
-#endif // SPCTOOL
 			break;
 		  case 0x2180:
 			REGISTER_2180(Byte);
@@ -1341,9 +1336,6 @@ uint8 S9xGetPPU (uint16 Address)
 	case 0x2174: case 0x2175: case 0x2176: case 0x2177:
 	case 0x2178: case 0x2179: case 0x217a: case 0x217b:
 	case 0x217c: case 0x217d: case 0x217e: case 0x217f:
-#ifdef SPCTOOL
-	    return ((uint8) _SPCOutP [Address & 3]);
-#else
     //	CPU.Flags |= DEBUG_MODE_FLAG;
 #ifdef SPC700_SHUTDOWN	
 	    IAPU.APUExecuting = Settings.APUEnabled;
@@ -1392,7 +1384,6 @@ uint8 S9xGetPPU (uint16 Address)
 		    return ((r >> 3) & 0xff);
 	    }
 	    return (Memory.FillRAM[Address]);
-#endif // SPCTOOL
 
 	case 0x2180:
 	    // Read WRAM

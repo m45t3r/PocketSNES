@@ -111,12 +111,6 @@ static void WhatsUsed ();
 EXTERN_C SDMA DMA[8];
 extern struct SCheatData Cheat;
 
-#ifdef SPCTOOL
-#include "spctool/spc700.h"
-extern "C" void TraceSPC (unsigned char *PC, unsigned short YA, unsigned char X,
-			  SPCFlags PS, unsigned char *SP);
-#endif
-
 FILE *trace = NULL;
 FILE *trace2 = NULL;
 struct SBreakPoint S9xBreakpoint[6];
@@ -1338,18 +1332,11 @@ void ProcessDebugCommand (char *Line)
 	extern FILE *apu_trace;
 	if (APU.Flags & TRACE_FLAG)
 	{
-#ifdef SPCTOOL
-	    printf ("ENABLED\n");
-	    _SetSPCDbg (TraceSPC);                   //Install debug handler
-#endif
 	    if (apu_trace == NULL)
 		apu_trace = fopen ("aputrace.log", "wb");
 	}
 	else
 	{
-#ifdef SPCTOOL
-	    _SetSPCDbg (NULL);
-#endif
 	    if (apu_trace)
 	    {
 		fclose (apu_trace);
@@ -1416,13 +1403,8 @@ void ProcessDebugCommand (char *Line)
     {
 	printf ("APU in-ports: %02X %02X %02X %02X\n",
 		IAPU.RAM [0xF4], IAPU.RAM [0xF5], IAPU.RAM [0xF6], IAPU.RAM [0xF7]);
-#ifdef SPCTOOL
-	printf ("APU out-ports: %02X %02X %02X %02X\n",
-		_SPCOutP [0], _SPCOutP [1], _SPCOutP [2], _SPCOutP [3]);
-#else
 	printf ("APU out-ports: %02X %02X %02X %02X\n",
 		APU.OutPorts [0], APU.OutPorts [1], APU.OutPorts [2], APU.OutPorts [3]);
-#endif
 	printf ("ROM/RAM switch: %s\n", (IAPU.RAM [0xf1] & 0x80) ? "ROM" : "RAM");
 	for (int i = 0; i < 3; i++)
 	    if (APU.TimerEnabled [i])

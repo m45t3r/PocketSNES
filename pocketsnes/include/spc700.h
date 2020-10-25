@@ -89,13 +89,6 @@
 #ifndef _SPC700_H_
 #define _SPC700_H_
 
-#ifdef SPCTOOL
-#define NO_CHANNEL_STRUCT
-#include "spctool/dsp.h"
-#include "spctool/spc700.h"
-#include "spctool/soundmod.h"
-#endif
-
 #define Carry       1
 #define Zero        2
 #define Interrupt   4
@@ -159,21 +152,6 @@ struct SAPURegisters{
 
 // 1.953us := 1.024065.54MHz
 
-#ifdef SPCTOOL
-EXTERN_C int32 ESPC (int32);
-
-#define APU_EXECUTE() \
-{ \
-    int32 l = (CPU.Cycles - APU.Cycles) / 14; \
-    if (l > 0) \
-    { \
-        l -= _EmuSPC(l); \
-        APU.Cycles += l * 14; \
-    } \
-}
-
-#else
-
 #ifdef DEBUGGER
 #define APU_EXECUTE1() \
 { \
@@ -197,6 +175,3 @@ if (IAPU.APUExecuting) \
 	APU_EXECUTE1(); \
 }
 #endif
-
-#endif
-

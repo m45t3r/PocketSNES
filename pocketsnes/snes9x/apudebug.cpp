@@ -93,10 +93,6 @@
 #include "soundux.h"
 #include "cpuexec.h"
 
-#ifdef SPCTOOL
-#include "spctool/spc700.h"
-#endif
-
 #ifdef DEBUGGER
 extern int NoiseFreq [32];
 
