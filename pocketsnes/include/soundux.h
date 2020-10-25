@@ -113,10 +113,6 @@ enum { MODE_NONE = SOUND_SILENT, MODE_ADSR, MODE_RELEASE = SOUND_RELEASE,
 
 #define SOUND_BUFS      4
 
-#ifdef __sgi
-#  include <audio.h>
-#endif /* __sgi */
-
 typedef struct {
     int sound_fd;
     int sound_switch;
@@ -132,12 +128,6 @@ typedef struct {
     bool8 sixteen_bit;
 #endif
     bool8 encoded;
-#ifdef __sun
-    int last_eof;
-#endif
-#ifdef __sgi
-    ALport al_port;
-#endif /* __sgi */
     int32  samples_mixed_so_far;
     int32  play_position;
     uint32 err_counter;

@@ -86,11 +86,6 @@
   Super NES and Super Nintendo Entertainment System are trademarks of
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
-#ifdef __DJGPP__
-#include <allegro.h>
-#undef TRUE
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -157,9 +152,6 @@ static int32 noise_gen;
 #define VOL_DIV16 0x0080
 #define ENVX_SHIFT 24
 
-extern "C" void DecodeBlockAsm (int8 *, int16 *, int32 *, int32 *);
-extern "C" void DecodeBlockAsm2 (int8 *, int16 *, int32 *, int32 *);
-
 // F is channel's current frequency and M is the 16-bit modulation waveform
 // from the previous channel multiplied by the current envelope volume level.
 #define PITCH_MOD(F,M) ((F) * ((((unsigned long) (M)) + 0x800000) >> 16) >> 7)
@@ -196,17 +188,11 @@ void S9xAPUSetEndOfSample (int i, Channel *ch)
     APU.DSP [APU_KOFF] &= ~(1 << i);
     APU.KeyedChannels &= ~(1 << i);
 }
-#ifdef __DJGPP
-END_OF_FUNCTION (S9xAPUSetEndOfSample)
-#endif
 
 void S9xAPUSetEndX (int ch)
 {
     APU.DSP [APU_ENDX] |= 1 << ch;
 }
-#ifdef __DJGPP
-END_OF_FUNCTION (S9xAPUSetEndX)
-#endif
 
 void S9xSetEnvRate (Channel *ch, unsigned long rate, int direction, int target)
 {
@@ -244,19 +230,11 @@ void S9xSetEnvRate (Channel *ch, unsigned long rate, int direction, int target)
     }
 }
 
-#ifdef __DJGPP
-END_OF_FUNCTION(S9xSetEnvRate);
-#endif
-
 void S9xSetEnvelopeRate (int channel, unsigned long rate, int direction,
 						 int target)
 {
     S9xSetEnvRate (&SoundData.channels [channel], rate, direction, target);
 }
-
-#ifdef __DJGPP
-END_OF_FUNCTION(S9xSetEnvelopeRate);
-#endif
 
 void S9xSetSoundVolume (int channel, short volume_left, short volume_right)
 {
@@ -547,267 +525,6 @@ bool8 S9xSetSoundMute (bool8 mute)
     return (old);
 }
 
-void AltDecodeBlock (Channel *ch)
-{
-    if (ch->block_pointer >= 0x10000 - 9)
-    {
-		ch->last_block = TRUE;
-		ch->loop = FALSE;
-		ch->block = ch->decoded;
-		memset ((void *) ch->decoded, 0, sizeof (int16) * 16);
-		return;
-    }
-    signed char *compressed = (signed char *) &IAPU.RAM [ch->block_pointer];
-	
-    unsigned char filter = *compressed;
-    if ((ch->last_block = filter & 1))
-		ch->loop = (filter & 2) != 0;
-	
-#if (defined (USE_X86_ASM) && (defined (__i386__) || defined (__i486__) ||\
-               defined (__i586__) || defined (__WIN32__) || defined (__DJGPP)))
-    int16 *raw = ch->block = ch->decoded;
-	
-    if (Settings.AltSampleDecode == 1)
-		DecodeBlockAsm (compressed, raw, &ch->previous [0], &ch->previous [1]);
-    else
-		DecodeBlockAsm2 (compressed, raw, &ch->previous [0], &ch->previous [1]);
-#else
-    int32 out;
-    unsigned char shift;
-    signed char sample1, sample2;
-    unsigned int i;
-	
-    compressed++;
-    signed short *raw = ch->block = ch->decoded;
-    
-    int32 prev0 = ch->previous [0];
-    int32 prev1 = ch->previous [1];
-    shift = filter >> 4;
-	
-    switch ((filter >> 2) & 3)
-    {
-    case 0:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			sample2 >>= 4;
-			sample1 >>= 4;
-			*raw++ = ((int32) sample1 << shift);
-			*raw++ = ((int32) sample2 << shift);
-		}
-		prev1 = *(raw - 2);
-		prev0 = *(raw - 1);
-		break;
-    case 1:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			sample2 >>= 4;
-			sample1 >>= 4;
-			prev0 = (int16) prev0;
-			*raw++ = prev1 = ((int32) sample1 << shift) + prev0 - (prev0 >> 4);
-			prev1 = (int16) prev1;
-			*raw++ = prev0 = ((int32) sample2 << shift) + prev1 - (prev1 >> 4);
-		}
-		break;
-    case 2:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			sample2 >>= 4;
-			sample1 >>= 4;
-			
-			out = (sample1 << shift) - prev1 + (prev1 >> 4);
-			prev1 = (int16) prev0;
-			prev0 &= ~3;
-			*raw++ = prev0 = out + (prev0 << 1) - (prev0 >> 5) - 
-				(prev0 >> 4);
-			
-			out = (sample2 << shift) - prev1 + (prev1 >> 4);
-			prev1 = (int16) prev0;
-			prev0 &= ~3;
-			*raw++ = prev0 = out + (prev0 << 1) - (prev0 >> 5) -
-				(prev0 >> 4);
-		}
-		break;
-    case 3:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			sample2 >>= 4;
-			sample1 >>= 4;
-			out = (sample1 << shift);
-			
-			out = out - prev1 + (prev1 >> 3) + (prev1 >> 4);
-			prev1 = (int16) prev0;
-			prev0 &= ~3;
-			*raw++ = prev0 = out + (prev0 << 1) - (prev0 >> 3) - 
-				(prev0 >> 4) - (prev1 >> 6);
-			
-			out = (sample2 << shift);
-			out = out - prev1 + (prev1 >> 3) + (prev1 >> 4);
-			prev1 = (int16) prev0;
-			prev0 &= ~3;
-			*raw++ = prev0 = out + (prev0 << 1) - (prev0 >> 3) - 
-				(prev0 >> 4) - (prev1 >> 6);
-		}
-		break;
-    }
-    ch->previous [0] = prev0;
-    ch->previous [1] = prev1;
-#endif
-	
-    ch->block_pointer += 9;
-}
-
-void AltDecodeBlock2 (Channel *ch)
-{
-    int32 out;
-    unsigned char filter;
-    unsigned char shift;
-    signed char sample1, sample2;
-    unsigned char i;
-	
-    if (ch->block_pointer > 0x10000 - 9)
-    {
-		ch->last_block = TRUE;
-		ch->loop = FALSE;
-		ch->block = ch->decoded;
-		memset ((void *) ch->decoded, 0, sizeof (int16) * 16);
-		return;
-    }
-	
-    signed char *compressed = (signed char *) &IAPU.RAM [ch->block_pointer];
-	
-    filter = *compressed;
-    if ((ch->last_block = filter & 1))
-		ch->loop = (filter & 2) != 0;
-	
-    compressed++;
-    signed short *raw = ch->block = ch->decoded;
-    
-    shift = filter >> 4;
-    int32 prev0 = ch->previous [0];
-    int32 prev1 = ch->previous [1];
-	
-    if(shift > 12)
-		shift -= 4;
-	
-    switch ((filter >> 2) & 3)
-    {
-    case 0:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			//Sample 2 = Bottom Nibble, Sign Extended.
-			sample2 >>= 4;
-			//Sample 1 = Top Nibble, shifted down and Sign Extended.
-			sample1 >>= 4;
-			
-			out = (int32)(sample1 << shift);
-			
-			prev1 = prev0;
-			prev0 = out;
-			CLIP16(out);
-			*raw++ = (int16)out;
-			
-			out = (int32)(sample2 << shift);
-			
-			prev1 = prev0;
-			prev0 = out;
-			CLIP16(out);
-			*raw++ = (int16)out;
-		}
-		break;
-    case 1:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			//Sample 2 = Bottom Nibble, Sign Extended.
-			sample2 >>= 4;
-			//Sample 1 = Top Nibble, shifted down and Sign Extended.
-			sample1 >>= 4;
-			out = (int32)(sample1 << shift);
-			out += (int32)((double)prev0 * 15/16);
-			
-			prev1 = prev0;
-			prev0 = out;
-			CLIP16(out);
-			*raw++ = (int16)out;
-			
-			out = (int32)(sample2 << shift);
-			out += (int32)((double)prev0 * 15/16);
-			
-			prev1 = prev0;
-			prev0 = out;
-			CLIP16(out);
-			*raw++ = (int16)out;
-		}
-		break;
-    case 2:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			//Sample 2 = Bottom Nibble, Sign Extended.
-			sample2 >>= 4;
-			//Sample 1 = Top Nibble, shifted down and Sign Extended.
-			sample1 >>= 4;
-			
-			out = ((sample1 << shift) * 256 + (prev0 & ~0x2) * 488 - prev1 * 240) >> 8;
-			
-			prev1 = prev0;
-			prev0 = (int16)out;
-			*raw++ = (int16)out;
-			
-			out = ((sample2 << shift) * 256 + (prev0 & ~0x2) * 488 - prev1 * 240) >> 8;
-			
-			prev1 = prev0;
-			prev0 = (int16)out;
-			*raw++ = (int16)out;
-		}
-		break;
-		
-    case 3:
-		for (i = 8; i != 0; i--)
-		{
-			sample1 = *compressed++;
-			sample2 = sample1 << 4;
-			//Sample 2 = Bottom Nibble, Sign Extended.
-			sample2 >>= 4;
-			//Sample 1 = Top Nibble, shifted down and Sign Extended.
-			sample1 >>= 4;
-			out = (int32)(sample1 << shift);
-			out += (int32)((double)prev0 * 115/64 - (double)prev1 * 13/16);
-			
-			prev1 = prev0;
-			prev0 = out;
-			
-			CLIP16(out);
-			*raw++ = (int16)out;
-			
-			out = (int32)(sample2 << shift);
-			out += (int32)((double)prev0 * 115/64 - (double)prev1 * 13/16);
-			
-			prev1 = prev0;
-			prev0 = out;
-			
-			CLIP16(out);
-			*raw++ = (int16)out;
-		}
-		break;
-    }
-    ch->previous [0] = prev0;
-    ch->previous [1] = prev1;
-    ch->block_pointer += 9;
-}
-
 void DecodeBlock (Channel *ch)
 {
     int32 out;
@@ -817,14 +534,6 @@ void DecodeBlock (Channel *ch)
     unsigned char i;
     bool invalid_header;
 
-    if (Settings.AltSampleDecode)
-    {
-		if (Settings.AltSampleDecode < 3)
-			AltDecodeBlock (ch);
-		else
-			AltDecodeBlock2 (ch);
-        return;
-	}
     if (ch->block_pointer > 0x10000 - 9)
     {
 		ch->last_block = TRUE;
@@ -1390,10 +1099,6 @@ stereo_exit: ;
 	}
 }
 
-#ifdef __DJGPP
-END_OF_FUNCTION(MixStereo);
-#endif
-
 #ifndef FOREVER_STEREO
 static inline void MixMono (int sample_count)
 {
@@ -1676,23 +1381,13 @@ static inline void MixMono (int sample_count)
 mono_exit: ;
     }
 }
-#ifdef __DJGPP
-END_OF_FUNCTION(MixMono);
-#endif
 #endif // !defined FOREVER_STEREO
-
-#ifdef __sun
-extern uint8 int2ulaw (int);
-#endif
 
 // For backwards compatibility with older port specific code
 void S9xMixSamplesO (uint8 *buffer, int sample_count, int byte_offset)
 {
     S9xMixSamples (buffer+byte_offset, sample_count);
 }
-#ifdef __DJGPP
-END_OF_FUNCTION(S9xMixSamplesO);
-#endif
 
 void S9xMixSamples (uint8 *buffer, int sample_count)
 {
@@ -1872,18 +1567,6 @@ void S9xMixSamples (uint8 *buffer, int sample_count)
             memset (buffer, 128, sample_count);
 		}
 		else
-#ifdef __sun
-			if (so.encoded)
-			{
-				for (J = 0; J < sample_count; J++)
-				{
-					I = (MixBuffer [J] * SoundData.master_volume_left) / VOL_DIV16;
-					CLIP16(I);
-					buffer[J] = int2ulaw (I);
-				}
-			}
-			else
-#endif
 			{
 				if (SoundData.echo_enable && SoundData.echo_buffer_size)
 				{
@@ -2013,10 +1696,6 @@ void S9xMixSamples (uint8 *buffer, int sample_count)
     }
 #endif
 }
-
-#ifdef __DJGPP
-END_OF_FUNCTION(S9xMixSamples);
-#endif
 
 void S9xResetSound (bool8 full)
 {
@@ -2288,5 +1967,3 @@ void S9xPlaySample (int channel)
 		APU.DSP [APU_ADSR1 + (channel << 4)],
 		APU.DSP [APU_ADSR2 + (channel << 4)]);
 }
-
-

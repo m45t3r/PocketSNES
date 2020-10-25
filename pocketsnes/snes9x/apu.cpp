@@ -87,11 +87,6 @@
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
 
-#ifdef __DJGPP
-#include <allegro.h>
-#undef TRUE
-#endif
-
 #include "snes9x.h"
 #include "spc700.h"
 #include "apu.h"
@@ -144,7 +139,7 @@ void S9xResetAPU ()
 
     int i;
 
-    Settings.APUEnabled = Settings.NextAPUEnabled;
+    Settings.APUEnabled = TRUE;
 
 	ZeroMemory(spc_dump_dsp, 0x100);
 	ZeroMemory(IAPU.RAM, 0x100);
