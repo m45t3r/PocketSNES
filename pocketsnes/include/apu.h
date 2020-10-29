@@ -86,6 +86,7 @@
   Super NES and Super Nintendo Entertainment System are trademarks of
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
+#ifndef USE_BLARGG_APU
 
 #ifndef _apu_h_
 #define _apu_h_
@@ -211,3 +212,10 @@ END_EXTERN_C
 #define FREQUENCY_MASK 0x3fff
 #endif
 
+#else
+#include "apu_blargg.h"
+#define ONE_APU_CYCLE 21
+#define APU_EXECUTE1() do {} while(0)
+#define APU_EXECUTE()  do {} while(0)
+
+#endif

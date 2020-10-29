@@ -894,12 +894,16 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 		  case 0x2174: case 0x2175: case 0x2176: case 0x2177:
 		  case 0x2178: case 0x2179: case 0x217a: case 0x217b:
 		  case 0x217c: case 0x217d: case 0x217e: case 0x217f:
+#ifndef USE_BLARGG_APU
 			Memory.FillRAM [Address] = Byte;
 			IAPU.RAM [(Address & 3) + 0xf4] = Byte;
 #ifdef SPC700_SHUTDOWN
 			IAPU.APUExecuting = Settings.APUEnabled;
 			IAPU.WaitCounter++;
 #endif
+#else
+			S9xAPUWritePort(Address & 3, Byte);
+#endif /* #ifndef USE_BLARGG_APU */
 			break;
 		  case 0x2180:
 			REGISTER_2180(Byte);
@@ -1336,54 +1340,54 @@ uint8 S9xGetPPU (uint16 Address)
 	case 0x2174: case 0x2175: case 0x2176: case 0x2177:
 	case 0x2178: case 0x2179: case 0x217a: case 0x217b:
 	case 0x217c: case 0x217d: case 0x217e: case 0x217f:
-    //	CPU.Flags |= DEBUG_MODE_FLAG;
+#ifndef USE_BLARGG_APU
 #ifdef SPC700_SHUTDOWN	
-	    IAPU.APUExecuting = Settings.APUEnabled;
-	    IAPU.WaitCounter++;
+		IAPU.APUExecuting = Settings.APUEnabled;
+		IAPU.WaitCounter++;
 #endif
-	    if (Settings.APUEnabled)
-	    {
-#ifdef CPU_SHUTDOWN
-//		CPU.WaitAddress = CPU.PCAtOpcodeStart;
-#endif
-		if (SNESGameFixes.APU_OutPorts_ReturnValueFix &&
-		    Address >= 0x2140 && Address <= 0x2143 && !CPU.V_Counter)
+		if (Settings.APUEnabled)
 		{
-                    return (uint8)((Address & 1) ? ((rand() & 0xff00) >> 8) : 
-				   (rand() & 0xff));
+			if (SNESGameFixes.APU_OutPorts_ReturnValueFix &&
+				Address >= 0x2140 && Address <= 0x2143 && !CPU.V_Counter)
+			{
+				return (uint8)((Address & 1) ? ((rand() & 0xff00) >> 8) : 
+							   (rand() & 0xff));
+			}
+
+			return (APU.OutPorts [Address & 3]);
 		}
 
-		return (APU.OutPorts [Address & 3]);
-	    }
-
-	    switch (Settings.SoundSkipMethod)
-	    {
-	    case 0:
-	    case 1:
-	    case 3:
-		CPU.BranchSkip = TRUE;
-		break;
-	    case 2:
-		break;
-	    }
-	    if ((Address & 3) < 2)
-	    {
-		int r = rand ();
-		if (r & 2)
+		switch (Settings.SoundSkipMethod)
 		{
-		    if (r & 4)
-			return ((Address & 3) == 1 ? 0xaa : 0xbb);
-		    else
-			return ((r >> 3) & 0xff);
+			case 0:
+			case 1:
+			case 3:
+				CPU.BranchSkip = TRUE;
+				break;
+			case 2:
+				break;
 		}
-	    }
-	    else
-	    {
-		int r = rand ();
-		if (r & 2)
-		    return ((r >> 3) & 0xff);
-	    }
-	    return (Memory.FillRAM[Address]);
+		if ((Address & 3) < 2)
+		{
+			int r = rand ();
+			if (r & 2)
+			{
+				if (r & 4)
+					return ((Address & 3) == 1 ? 0xaa : 0xbb);
+				else
+					return ((r >> 3) & 0xff);
+			}
+		}
+		else
+		{
+			int r = rand ();
+			if (r & 2)
+				return ((r >> 3) & 0xff);
+		}
+		return (Memory.FillRAM[Address]);
+#else
+		return S9xAPUReadPort(Address & 3);
+#endif /* #ifndef USE_BLARGG_APU */
 
 	case 0x2180:
 	    // Read WRAM

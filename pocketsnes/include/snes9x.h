@@ -324,6 +324,9 @@ struct SSettings{
 	bool8  OBC1;
     /* Sound options */
     uint32 SoundPlaybackRate;
+#ifdef USE_BLARGG_APU
+    uint32 SoundInputRate;
+#endif
     bool8  TraceSoundDSP;
 #ifndef FOREVER_STEREO
     bool8  Stereo;
@@ -398,6 +401,9 @@ struct SSettings{
 	bool8  ForceInterleaveGD24;
 #ifdef DEBUG_MAXCOUNT
     unsigned int MaxCount;
+#endif
+#ifdef USE_BLARGG_APU
+    bool8  HardDisableAudio;
 #endif
 };
 

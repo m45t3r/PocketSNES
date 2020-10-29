@@ -3367,33 +3367,35 @@ inline void CPUShutdown()
 {
     if (Settings.Shutdown && CPU.PC == CPU.WaitAddress)
     {
-	// Don't skip cycles with a pending NMI or IRQ - could cause delayed
-	// interrupt. Interrupts are delayed for a few cycles already, but
-	// the delay could allow the shutdown code to cycle skip again.
-	// Was causing screen flashing on Top Gear 3000.
+        // Don't skip cycles with a pending NMI or IRQ - could cause delayed
+        // interrupt. Interrupts are delayed for a few cycles already, but
+        // the delay could allow the shutdown code to cycle skip again.
+        // Was causing screen flashing on Top Gear 3000.
 
-	if (CPU.WaitCounter == 0 && 
-	    !(CPU.Flags & (IRQ_PENDING_FLAG | NMI_FLAG)))
-	{
-	    CPU.WaitAddress = NULL;
-	    if (Settings.SA1)
-		S9xSA1ExecuteDuringSleep ();
-	    CPU.Cycles = CPU.NextEvent;
-	    if (IAPU.APUExecuting)
-	    {
-		ICPU.CPUExecuting = FALSE;
-		do
-		{
-		    APU_EXECUTE1();
-		} while (APU.Cycles < CPU.NextEvent);
-		ICPU.CPUExecuting = TRUE;
-	    }
-	}
-	else
-	if (CPU.WaitCounter >= 2)
-	    CPU.WaitCounter = 1;
-	else
-	    CPU.WaitCounter--;
+        if (CPU.WaitCounter == 0 && 
+            !(CPU.Flags & (IRQ_PENDING_FLAG | NMI_FLAG)))
+        {
+            CPU.WaitAddress = NULL;
+            if (Settings.SA1)
+                S9xSA1ExecuteDuringSleep ();
+#ifndef USE_BLARGG_APU
+            CPU.Cycles = CPU.NextEvent;
+            if (IAPU.APUExecuting)
+            {
+                ICPU.CPUExecuting = FALSE;
+                do
+                {
+                    APU_EXECUTE1();
+                } while (APU.Cycles < CPU.NextEvent);
+                ICPU.CPUExecuting = TRUE;
+            }
+#endif
+        }
+        else
+            if (CPU.WaitCounter >= 2)
+                CPU.WaitCounter = 1;
+            else
+                CPU.WaitCounter--;
     }
 }
 #else
@@ -3401,14 +3403,14 @@ inline void CPUShutdown()
 {
     if (Settings.Shutdown && CPU.PC == CPU.WaitAddress)
     {
-	if (CPU.WaitCounter >= 1)
-	{
-	    SA1.Executing = FALSE;
-	    SA1.CPUExecuting = FALSE;
+        if (CPU.WaitCounter >= 1)
+        {
+            SA1.Executing = FALSE;
+            SA1.CPUExecuting = FALSE;
+        }
+        else
+            CPU.WaitCounter++;
 	}
-	else
-	    CPU.WaitCounter++;
-    }
 }
 #endif
 #else
@@ -3420,20 +3422,22 @@ inline void CPUShutdown()
 static inline void ForceShutdown(void)
 {
 #ifndef SA1_OPCODES
-   CPU.WaitAddress = NULL;
-   CPU.Cycles = CPU.NextEvent;
-   if (IAPU.APUExecuting)
-   {
-      ICPU.CPUExecuting = false;
-      do
-      {
-         APU_EXECUTE1();
-      } while (APU.Cycles < CPU.NextEvent);
-      ICPU.CPUExecuting = true;
-   }
+    CPU.WaitAddress = NULL;
+#ifndef USE_BLARGG_APU
+    CPU.Cycles = CPU.NextEvent;
+    if (IAPU.APUExecuting)
+    {
+        ICPU.CPUExecuting = false;
+        do
+        {
+            APU_EXECUTE1();
+        } while (APU.Cycles < CPU.NextEvent);
+        ICPU.CPUExecuting = true;
+    }
+#endif
 #else
-   SA1.Executing = false;
-   SA1.CPUExecuting = false;
+    SA1.Executing = false;
+    SA1.CPUExecuting = false;
 #endif
 }
 #endif
@@ -5001,6 +5005,7 @@ static void OpCB (void)
     if (Settings.Shutdown)
     {
         CPU.Cycles = CPU.NextEvent;
+#ifndef USE_BLARGG_APU
         if (IAPU.APUExecuting)
         {
             ICPU.CPUExecuting = FALSE;
@@ -5010,6 +5015,7 @@ static void OpCB (void)
             } while (APU.Cycles < CPU.NextEvent);
             ICPU.CPUExecuting = TRUE;
         }
+#endif
     }
     else
     {

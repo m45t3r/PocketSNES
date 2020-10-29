@@ -86,6 +86,8 @@
   Super NES and Super Nintendo Entertainment System are trademarks of
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
+#ifndef USE_BLARGG_APU
+
 #ifndef _SOUND_H_
 #define _SOUND_H_
 
@@ -251,3 +253,4 @@ bool8 S9xOpenSoundDevice (int, bool8, int);
 void S9xSetPlaybackRate (uint32 rate);
 #endif
 
+#endif

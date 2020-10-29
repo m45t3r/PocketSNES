@@ -199,14 +199,18 @@ void S9xMainLoop_SA1_SFX (void)
     } while(true);
 
     ICPU.Registers.PC = CPU.PC - CPU.PCBase;
+#ifndef USE_BLARGG_APU
     IAPU.Registers.PC = IAPU.PC - IAPU.RAM;
+#endif
 
 #ifdef LAGFIX
     if(!finishedFrame)
     {
 #endif
         S9xPackStatus ();
-        S9xAPUPackStatus ();
+#ifndef USE_BLARGG_APU
+        S9xAPUPackStatus();
+#endif
 
         if (CPU.Flags & SCAN_KEYS_FLAG)
         {
@@ -300,14 +304,18 @@ void S9xMainLoop_SA1_NoSFX (void)
     } while(true);
 
     ICPU.Registers.PC = CPU.PC - CPU.PCBase;
+#ifndef USE_BLARGG_APU
     IAPU.Registers.PC = IAPU.PC - IAPU.RAM;
+#endif
 
 #ifdef LAGFIX
     if(!finishedFrame)
     {
 #endif
     S9xPackStatus ();
+#ifndef USE_BLARGG_APU
     S9xAPUPackStatus ();
+#endif
     if (CPU.Flags & SCAN_KEYS_FLAG)
     {
 	    S9xSyncSpeed ();
@@ -390,13 +398,18 @@ void S9xMainLoop_NoSA1_SFX (void)
     } while(true);
 
     ICPU.Registers.PC = CPU.PC - CPU.PCBase;
+#ifndef USE_BLARGG_APU
     IAPU.Registers.PC = IAPU.PC - IAPU.RAM;
+#endif
+
 #ifdef LAGFIX
     if(!finishedFrame)
     {
 #endif
         S9xPackStatus ();
+#ifndef USE_BLARGG_APU
         S9xAPUPackStatus ();
+#endif
         if (CPU.Flags & SCAN_KEYS_FLAG)
         {
             S9xSyncSpeed ();
@@ -487,13 +500,18 @@ void S9xMainLoop_NoSA1_NoSFX (void)
     } while(true);
 
     ICPU.Registers.PC = CPU.PC - CPU.PCBase;
+#ifndef USE_BLARGG_APU
     IAPU.Registers.PC = IAPU.PC - IAPU.RAM;
+#endif
+
 #ifdef LAGFIX
     if(!finishedFrame)
     {
 #endif
         S9xPackStatus ();
+#ifndef USE_BLARGG_APU
         S9xAPUPackStatus ();
+#endif
         if (CPU.Flags & SCAN_KEYS_FLAG)
         {
             S9xSyncSpeed ();
@@ -554,21 +572,22 @@ void S9xDoHBlankProcessing_SFX ()
 		case HBLANK_END_EVENT:
 		S9xSuperFXExec ();
 
-#ifndef STORM
+#ifndef USE_BLARGG_APU
 		if (Settings.SoundSync)
 			S9xGenerateSound ();
-#endif
 
 		CPU.Cycles -= Settings.H_Max;
 		if (IAPU.APUExecuting)
 		{
 			APU.Cycles -= Settings.H_Max;
-#ifdef MK_APU
-			S9xCatchupCount();
-#endif
 		}
 		else
 			APU.Cycles = 0;
+#else
+		S9xAPUExecute();
+		CPU.Cycles -= Settings.H_Max;
+		S9xAPUSetReferenceTime(CPU.Cycles);
+#endif
 
 		CPU.NextEvent = -1;
 		ICPU.Scanline++;
@@ -657,10 +676,7 @@ void S9xDoHBlankProcessing_SFX ()
 	// once every emulated 63.5 microseconds, which coresponds to
 	// 15.750KHz, but the SPC700 timers need to be updated at multiples
 	// of 8KHz, hence the error correction.
-//	IAPU.TimerErrorCounter++;
-//	if (IAPU.TimerErrorCounter >= )
-//	    IAPU.TimerErrorCounter = 0;
-//	else
+#ifndef USE_BLARGG_APU
 	{
 		if (APU.TimerEnabled [2])
 		{
@@ -705,6 +721,7 @@ void S9xDoHBlankProcessing_SFX ()
 			}
 	    }
 	}
+#endif
 		break;
 
 	    case HTIMER_BEFORE_EVENT:
@@ -733,21 +750,22 @@ void S9xDoHBlankProcessing_NoSFX ()
 
 		case HBLANK_END_EVENT:
 
-#ifndef STORM
 		if (Settings.SoundSync)
 			S9xGenerateSound ();
-#endif
 
+#ifndef USE_BLARGG_APU
 		CPU.Cycles -= Settings.H_Max;
 		if (IAPU.APUExecuting)
 		{
 			APU.Cycles -= Settings.H_Max;
-#ifdef MK_APU
-			S9xCatchupCount();
-#endif
 		}
 		else
 			APU.Cycles = 0;
+#else
+		S9xAPUExecute();
+		CPU.Cycles -= Settings.H_Max;
+		S9xAPUSetReferenceTime(CPU.Cycles);
+#endif
 
 		CPU.NextEvent = -1;
 		ICPU.Scanline++;
@@ -836,10 +854,7 @@ void S9xDoHBlankProcessing_NoSFX ()
 	// once every emulated 63.5 microseconds, which coresponds to
 	// 15.750KHz, but the SPC700 timers need to be updated at multiples
 	// of 8KHz, hence the error correction.
-//	IAPU.TimerErrorCounter++;
-//	if (IAPU.TimerErrorCounter >= )
-//	    IAPU.TimerErrorCounter = 0;
-//	else
+#ifndef USE_BLARGG_APU
 	{
 		if (APU.TimerEnabled [2])
 		{
@@ -884,6 +899,7 @@ void S9xDoHBlankProcessing_NoSFX ()
 			}
 	    }
 	}
+#endif
 		break;
 
 	    case HTIMER_BEFORE_EVENT:

@@ -113,9 +113,11 @@ struct SICPU ICPU;
 
 struct SCPUState CPU;
 
+#ifndef USE_BLARGG_APU
 struct SAPU APU;
 
 struct SIAPU IAPU;
+#endif
 
 struct SSettings Settings;
 
@@ -123,7 +125,9 @@ struct SDSP1 DSP1;
 
 struct SSA1 SA1;
 
+#ifndef USE_BLARGG_APU
 SSoundData SoundData;
+#endif
 
 SnesModel M1SNES={1,3,2};
 SnesModel M2SNES={2,4,3};
@@ -220,6 +224,7 @@ struct SCheatData Cheat;
 bool finishedFrame = false;
 #endif
 
+#ifndef USE_BLARGG_APU
 // Define NO_VOLATILE_SOUND if you're always reading or writing sound from one
 // thread or one co-routine. If you're using interrupts or a thread, sound must
 // be volatile.
@@ -228,12 +233,16 @@ volatile SoundStatus so;
 #else
 SoundStatus so;
 #endif
+#endif
 
+#ifndef USE_BLARGG_APU
 int Echo [24000];
 int DummyEchoBuffer [SOUND_BUFFER_SIZE];
 int MixBuffer [SOUND_BUFFER_SIZE];
 int EchoBuffer [SOUND_BUFFER_SIZE];
 int FilterTaps [8];
+#endif
+
 unsigned long Z = 0;
 int Loop [16];
 

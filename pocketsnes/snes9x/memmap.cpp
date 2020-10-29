@@ -1679,8 +1679,10 @@ void CMemory::InitROM (bool8 Interleaved)
 		}
 	}
 	
+#ifndef USE_BLARGG_APU
 	IAPU.OneCycle = ONE_APU_CYCLE;
-	Settings.Shutdown = Settings.ShutdownMaster;
+#endif
+    Settings.Shutdown = Settings.ShutdownMaster;
 	
 	SetDSP=&DSP1SetByte;
 	GetDSP=&DSP1GetByte;
@@ -3896,6 +3898,7 @@ void CMemory::ApplyROMFixes ()
     }
 	
 
+#ifndef USE_BLARGG_APU
 	//APU timing hacks
 	
     // Stunt Racer FX
@@ -3954,6 +3957,7 @@ void CMemory::ApplyROMFixes ()
     {
 		IAPU.OneCycle = 15;
     }
+#endif
     
 
 	//Specific game fixes
