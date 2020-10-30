@@ -674,21 +674,27 @@ static void ScanSaveStates(s8 *romname)
 static
 bool8 LoadStateTemp()
 {
+#ifndef USE_BLARGG_APU
 	char name[SAL_MAX_PATH];
 	bool8 ret;
 	sprintf(name, "%s%s%s", sal_DirectoryGetTemp(), SAL_DIR_SEP, ".svt");
 	if (!(ret = S9xUnfreezeGame(name)))
 		fprintf(stderr, "Failed to read saved state at %s: %s\n", name, strerror(errno));
 	return ret;
+#else
+	return false;
+#endif
 }
 
 static 
 void SaveStateTemp()
 {
+#ifndef USE_BLARGG_APU
 	char name[SAL_MAX_PATH];
 	sprintf(name, "%s%s%s", sal_DirectoryGetTemp(), SAL_DIR_SEP, ".svt");
 	if (!S9xFreezeGame(name))
 		fprintf(stderr, "Failed to write saved state at %s: %s\n", name, strerror(errno));
+#endif
 }
 
 static
@@ -702,19 +708,27 @@ void DeleteStateTemp()
 static
 bool8 LoadStateFile(s8 *filename)
 {
+#ifndef USE_BLARGG_APU
 	bool8 ret;
 	if (!(ret = S9xUnfreezeGame(filename)))
 		fprintf(stderr, "Failed to read saved state at %s: %s\n", filename, strerror(errno));
 	return ret;
+#else
+	return false;
+#endif
 }
 
 static 
 bool8 SaveStateFile(s8 *filename)
 {
+#ifndef USE_BLARGG_APU
 	bool8 ret;
 	if (!(ret = S9xFreezeGame(filename)))
 		fprintf(stderr, "Failed to write saved state at %s: %s\n", filename, strerror(errno));
 	return ret;
+#else
+	return false;
+#endif
 }
 
 u32 IsPreviewingState()

@@ -287,8 +287,9 @@ bool    S9xSyncSound();
 int32   S9xGetSampleCount();
 void    S9xFinalizeSamples();
 void    S9xClearSamples();
-bool    S9xMixSamples(int16 * buffer, uint32 sample_count);
 void    S9xSetSamplesAvailableCallback(apu_callback);
+EXTERN_C bool S9xMixSamples(int16 * buffer, uint32 sample_count);
+EXTERN_C void S9xSetSoundMute(bool mute);
 
 #endif /* APU_BLARGG_H */
 #endif

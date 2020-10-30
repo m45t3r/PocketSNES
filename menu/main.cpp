@@ -62,6 +62,18 @@ void S9xExit ()
 
 u32 SamplesDoneThisFrame = 0;
 
+#ifdef USE_BLARGG_APU
+static void S9xAudioCallback()
+{
+   size_t avail;
+   /* Just pick a big buffer. We won't use it all. */
+   static int16_t audio_buf[0x20000];
+
+   S9xFinalizeSamples();
+   avail = S9xGetSampleCount();
+   S9xMixSamples(audio_buf, avail);
+}
+#else
 void S9xGenerateSound (void)
 {
 	so.err_counter += so.err_rate;
@@ -74,6 +86,7 @@ void S9xGenerateSound (void)
 		SamplesDoneThisFrame += SamplesThisRun;
 	}
 }
+#endif
 
 void S9xSetPalette ()
 {
@@ -442,6 +455,9 @@ int Run(int sound)
 
 	Settings.SoundSync = mMenuOptions.soundSync;
 	Settings.SkipFrames = mMenuOptions.frameSkip == 0 ? AUTO_FRAMERATE : mMenuOptions.frameSkip - 1;
+#ifdef USE_BLARGG_APU
+	Settings.HardDisableAudio = FALSE;
+#endif
 	sal_TimerInit(Settings.FrameTime);
 
 	if (sound) {
@@ -464,9 +480,16 @@ int Run(int sound)
 			sal_AudioInit(mMenuOptions.soundRate, 16,
 						mMenuOptions.stereo, Memory.ROMFramesPerSecond);
 
-			S9xInitSound (mMenuOptions.soundRate,
-						mMenuOptions.stereo, sal_AudioGetSamplesPerFrame() * sal_AudioGetBytesPerSample());
+#ifdef USE_BLARGG_APU
+			S9xInitSound(mMenuOptions.soundRate,
+						 mMenuOptions.stereo);
+#else
+			S9xInitSound(mMenuOptions.soundRate,
+						 mMenuOptions.stereo
+						 sal_AudioGetSamplesPerFrame() * sal_AudioGetBytesPerSample());
 			S9xSetPlaybackRate(mMenuOptions.soundRate);
+#endif
+
 			LastAudioRate = mMenuOptions.soundRate;
 			LastStereo = mMenuOptions.stereo;
 			LastHz = Memory.ROMFramesPerSecond;
@@ -483,11 +506,13 @@ int Run(int sound)
 		//Run SNES for one glorious frame
 		S9xMainLoop ();
 
+#ifndef USE_BLARGG_APU
 		if (SamplesDoneThisFrame < sal_AudioGetSamplesPerFrame())
 			sal_AudioGenerate(sal_AudioGetSamplesPerFrame() - SamplesDoneThisFrame);
 		SamplesDoneThisFrame = 0;
 		so.err_counter = 0;
-  	}
+#endif
+	}
 
 	sal_AudioPause();
 
@@ -520,7 +545,11 @@ int SnesRomLoad()
 	MenuMessageBox("Done loading the ROM",mRomName,"",MENU_MESSAGE_BOX_MODE_MSG);
 
 	S9xReset();
+#ifndef USE_BLARGG_APU
 	S9xResetSound(1);
+#else
+	S9xSetSoundMute(FALSE);
+#endif
 	S9xLoadSRAM();
 	return SAL_OK;
 }
@@ -558,6 +587,11 @@ int SnesInit()
 #ifndef FOREVER_16_BIT
 	Settings.SixteenBit = TRUE;
 #endif
+#ifndef USE_BLARGG_APU
+	Settings.SoundSync = TRUE;
+#else
+	Settings.SoundSync = FALSE;
+#endif
 	
 	Settings.SupportHiRes = FALSE;
 	Settings.NetPlay = FALSE;
@@ -567,7 +601,6 @@ int SnesInit()
 	Settings.TurboMode = FALSE;
 	Settings.TurboSkipFrames = 15;
 	Settings.ThreadSound = FALSE;
-	Settings.SoundSync = 1;
 	Settings.FixFrequency = TRUE;
 	//Settings.NoPatch = true;		
 
@@ -609,9 +642,11 @@ int SnesInit()
 		return SAL_ERROR;
 	}
 
-	//S9xInitSound ();
-	
-	//S9xSetRenderPixelFormat (RGB565);
+#ifdef USE_BLARGG_APU
+	S9xInitSound(1000, 0); /* just give it a 1 second buffer */
+	S9xSetSamplesAvailableCallback(S9xAudioCallback);
+#endif
+
 	S9xSetSoundMute (TRUE);
 
 	if (!S9xGraphicsInit ())
