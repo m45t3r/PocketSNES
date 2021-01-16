@@ -58,6 +58,7 @@ enum SETTINGS_MENU_ENUM
 	SETTINGS_MENU_ANALOG_JOY,
 #endif
 	SETTINGS_MENU_SOUND_SYNC,
+	MENU_KEYSTROKE,
 	SETTINGS_MENU_AUTO_SAVE_SRAM,
 	SAVESTATE_MENU_SAVE_SRAM,
 //	SETTINGS_MENU_CPU_SPEED,
@@ -143,14 +144,13 @@ struct MENU_OPTIONS
 #else
   unsigned int spare02;
 #endif
-  unsigned int spare03;
+  unsigned int menuKeystroke;
   unsigned int spare04;
   unsigned int spare05;
   unsigned int spare06;
   unsigned int spare07;
   unsigned int spare08;
   unsigned int spare09;
-
 };
 
 struct SAVE_STATE

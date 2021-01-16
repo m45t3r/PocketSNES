@@ -259,12 +259,47 @@ uint32 S9xReadJoypad (int which1)
 
 	u32 joy = sal_InputPoll();
 	
-	if (((joy & SAL_INPUT_SELECT) && (joy & SAL_INPUT_START))
+	switch(mMenuOptions.menuKeystroke)
+	{
+		case 0:
+        		if (((joy & SAL_INPUT_SELECT) && (joy & SAL_INPUT_START))
+        		 || (joy & SAL_INPUT_MENU))
+        		{
+                		mEnterMenu = 1;
+                		return val;
+		        }
+			break;
+		case 1:
+                        if (((joy & SAL_INPUT_L) && (joy & SAL_INPUT_R))
+                         || (joy & SAL_INPUT_MENU))
+                        {
+                                mEnterMenu = 1;
+                                return val;
+                        }
+			break;
+		case 2:
+                        if (((joy & SAL_INPUT_SELECT) && (joy & SAL_INPUT_START) && (joy & SAL_INPUT_L) && (joy & SAL_INPUT_R))
+                         || (joy & SAL_INPUT_MENU))
+                        {
+                                mEnterMenu = 1;
+                                return val;
+                        }
+			break;
+		default:
+                        if ((joy & SAL_INPUT_MENU))
+                        {
+                                mEnterMenu = 1;
+                                return val;
+                        }
+			break;
+	}
+	
+	/*if (((joy & SAL_INPUT_SELECT) && (joy & SAL_INPUT_START))
 	 || (joy & SAL_INPUT_MENU))
 	{
 		mEnterMenu = 1;		
 		return val;
-	}
+	}*/
 
 #if 0
 	if ((joy & SAL_INPUT_L)&&(joy & SAL_INPUT_R)&&(joy & SAL_INPUT_UP))

@@ -54,6 +54,7 @@ void DefaultMenuOptions(void)
 #ifdef GCW_JOYSTICK
 	mMenuOptions->analogJoy=0;
 #endif
+	mMenuOptions->menuKeystroke=0;
 }
 
 s32 LoadMenuOptions(const char *path, const char *filename, const char *ext,
@@ -1031,6 +1032,23 @@ void SettingsMenuUpdateText(s32 menu_index)
 {
 	switch(menu_index)
 	{
+		case MENU_KEYSTROKE:
+			switch(mMenuOptions->menuKeystroke)
+			{
+				case 0:
+					strcpy(mMenuText[MENU_KEYSTROKE], "Menu combo         Start+Select");
+					break;
+				case 1:
+					strcpy(mMenuText[MENU_KEYSTROKE], "Menu combo                  L+R");
+					break;
+				case 2:
+					strcpy(mMenuText[MENU_KEYSTROKE], "Menu combo     L+R+Start+Select");
+					break;
+				default:
+					strcpy(mMenuText[MENU_KEYSTROKE], "Menu combo    Power Button only");
+					break;
+			}
+
 		case SAVESTATE_MENU_SAVE_SRAM:
 			strcpy(mMenuText[SAVESTATE_MENU_SAVE_SRAM],"Save SRAM now");
 
@@ -1180,6 +1198,7 @@ void SettingsMenuUpdateTextAll(void)
 	SettingsMenuUpdateText(SETTINGS_MENU_AUTO_SAVE_SRAM);
 	SettingsMenuUpdateText(SAVESTATE_MENU_SAVE_SRAM);
 	SettingsMenuUpdateText(MENU_CREDITS);
+	SettingsMenuUpdateText(MENU_KEYSTROKE);
 }
 
 static
@@ -1334,6 +1353,20 @@ s32 SettingsMenu(void)
 		{
 			switch(menufocus)
 			{
+				case MENU_KEYSTROKE:
+					if(keys & SAL_INPUT_RIGHT)
+					{
+						mMenuOptions->menuKeystroke=(mMenuOptions->menuKeystroke + 1) % 4;
+					}
+					else
+					{
+                                                if(mMenuOptions->menuKeystroke == 0)
+                                                        mMenuOptions->menuKeystroke=3;
+                                                else
+                                                        mMenuOptions->menuKeystroke--; 
+					}
+					SettingsMenuUpdateText(MENU_KEYSTROKE);
+					break;
 				case SETTINGS_MENU_SOUND_ON:
 					mMenuOptions->soundEnabled^=1;
 					SettingsMenuUpdateText(SETTINGS_MENU_SOUND_ON);
