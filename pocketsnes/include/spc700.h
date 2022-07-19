@@ -86,6 +86,8 @@
   Super NES and Super Nintendo Entertainment System are trademarks of
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
+#ifndef USE_BLARGG_APU
+
 #ifndef _SPC700_H_
 #define _SPC700_H_
 
@@ -174,4 +176,6 @@ if (IAPU.APUExecuting) \
     while (APU.Cycles <= CPU.Cycles) \
 	APU_EXECUTE1(); \
 }
+#endif
+
 #endif

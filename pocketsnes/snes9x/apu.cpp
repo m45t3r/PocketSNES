@@ -87,6 +87,8 @@
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
 
+#ifndef USE_BLARGG_APU
+
 #include "snes9x.h"
 #include "spc700.h"
 #include "apu.h"
@@ -943,3 +945,4 @@ uint8 S9xGetAPUDSP ()
     return (byte);
 }
 
+#endif

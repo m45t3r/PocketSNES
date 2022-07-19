@@ -86,6 +86,8 @@
   Super NES and Super Nintendo Entertainment System are trademarks of
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
+#ifndef USE_BLARGG_APU
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -1967,3 +1969,5 @@ void S9xPlaySample (int channel)
 		APU.DSP [APU_ADSR1 + (channel << 4)],
 		APU.DSP [APU_ADSR2 + (channel << 4)]);
 }
+
+#endif
