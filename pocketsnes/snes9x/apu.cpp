@@ -151,7 +151,7 @@ void S9xResetAPU ()
 		memmove(IAPU.RAM+(i<<8), IAPU.RAM, 0x100);
 	}
 	
-    ZeroMemory (APU.OutPorts, 4);
+    ZeroMemory (APU.OutPorts, sizeof(APU.OutPorts));
     IAPU.DirectPage = IAPU.RAM;
     // memmove converted: Different mallocs [Neb]
     // DS2 DMA notes: The APU ROM is not 32-byte aligned [Neb]
@@ -163,15 +163,15 @@ void S9xResetAPU ()
     APU.Cycles = 0;
     IAPU.Registers.YA.W = 0;
     IAPU.Registers.X = 0;
-    IAPU.Registers.S = 0xff;
-    IAPU.Registers.P = 0;
+    IAPU.Registers.S = 0xef;
+    IAPU.Registers.P = 0x02;
     S9xAPUUnpackStatus ();
     IAPU.Registers.PC = 0;
     IAPU.APUExecuting = Settings.APUEnabled;
 #ifdef SPC700_SHUTDOWN
     IAPU.WaitAddress1 = NULL;
     IAPU.WaitAddress2 = NULL;
-    IAPU.WaitCounter = 0;
+    IAPU.WaitCounter = 1;
 #endif
     APU.ShowROM = TRUE;
     IAPU.RAM [0xf1] = 0x80;
@@ -194,7 +194,7 @@ void S9xResetAPU ()
 	APU.DSP [APU_ENDX] = 0;
 	APU.DSP [APU_KOFF] = 0;
 	APU.DSP [APU_KON] = 0;
-	APU.DSP [APU_FLG] = APU_MUTE | APU_ECHO_DISABLED;
+	APU.DSP [APU_FLG] = APU_SOFT_RESET | APU_MUTE;
 	APU.KeyedChannels = 0;
 
 	S9xResetSound (TRUE);
@@ -487,7 +487,7 @@ void S9xSetAPUDSP (uint8 byte)
 			S9xTraceSoundDSP ("[%d] %d freq low: %d\n",
 			ICPU.Scanline, reg>>4, byte);
 #endif
-		S9xSetSoundHertz(reg >> 4, ((byte + (APU.DSP [reg + 1] << 8)) & FREQUENCY_MASK) / 8);
+		S9xSetSoundHertz(reg >> 4, ((((int16_t) byte + ((int16_t) APU.DSP [reg + 1] << 8)) & FREQUENCY_MASK) * 32000) >> 12);
 		break;
 		
     case APU_P_HIGH + 0x00:
@@ -667,7 +667,7 @@ void S9xFixEnvelope (int channel, uint8 gain, uint8 adsr1, uint8 adsr2)
     else
     {
 		// Gain mode
-		if ((gain & 0x80) == 0)
+		if (!(gain & 0x80))
 		{
 			if (S9xSetSoundMode (channel, MODE_GAIN))
 			{
@@ -700,39 +700,39 @@ void S9xSetAPUControl (uint8 byte)
 {
 	//if (byte & 0x40)
 	//printf ("*** Special SPC700 timing enabled\n");
-    if ((byte & 1) != 0 && !APU.TimerEnabled [0])
-    {
+	if ((byte & 1) && !APU.TimerEnabled [0])
+	{
 		APU.Timer [0] = 0;
 		IAPU.RAM [0xfd] = 0;
 		if ((APU.TimerTarget [0] = IAPU.RAM [0xfa]) == 0)
 			APU.TimerTarget [0] = 0x100;
-    }
-    if ((byte & 2) != 0 && !APU.TimerEnabled [1])
-    {
+	}
+	if ((byte & 2) && !APU.TimerEnabled [1])
+	{
 		APU.Timer [1] = 0;
 		IAPU.RAM [0xfe] = 0;
 		if ((APU.TimerTarget [1] = IAPU.RAM [0xfb]) == 0)
 			APU.TimerTarget [1] = 0x100;
-    }
-    if ((byte & 4) != 0 && !APU.TimerEnabled [2])
-    {
+	}
+	if ((byte & 4) && !APU.TimerEnabled [2])
+	{
 		APU.Timer [2] = 0;
 		IAPU.RAM [0xff] = 0;
 		if ((APU.TimerTarget [2] = IAPU.RAM [0xfc]) == 0)
 			APU.TimerTarget [2] = 0x100;
-    }
-    APU.TimerEnabled [0] = byte & 1;
-    APU.TimerEnabled [1] = (byte & 2) >> 1;
-    APU.TimerEnabled [2] = (byte & 4) >> 2;
+	}
+	APU.TimerEnabled [0] = !!(byte & 1);
+	APU.TimerEnabled [1] = !!(byte & 2);
+	APU.TimerEnabled [2] = !!(byte & 4);
 	
-    if (byte & 0x10)
+	if (byte & 0x10)
 		IAPU.RAM [0xF4] = IAPU.RAM [0xF5] = 0;
 	
-    if (byte & 0x20)
+	if (byte & 0x20)
 		IAPU.RAM [0xF6] = IAPU.RAM [0xF7] = 0;
 	
-    if (byte & 0x80)
-    {
+	if (byte & 0x80)
+	{
 		if (!APU.ShowROM)
 		{
 			// memmove converted: Different mallocs [Neb]
@@ -767,11 +767,9 @@ uint8 S9xGetAPUDSP ()
     case APU_OUTX + 0x60:
     case APU_OUTX + 0x70:
 		if (SoundData.channels [reg >> 4].state == SOUND_SILENT)
-			return (0);
-		return ((SoundData.channels [reg >> 4].sample >> 8) |
-			(SoundData.channels [reg >> 4].sample & 0xff));
-		
-    case APU_ENVX + 0x00:
+			return 0;
+		return (SoundData.channels [reg >> 4].sample >> 8) | (SoundData.channels [reg >> 4].sample & 0xff);
+	case APU_ENVX + 0x00:
     case APU_ENVX + 0x10:
     case APU_ENVX + 0x20:
     case APU_ENVX + 0x30:
@@ -779,11 +777,13 @@ uint8 S9xGetAPUDSP ()
     case APU_ENVX + 0x50:
     case APU_ENVX + 0x60:
     case APU_ENVX + 0x70:
-		return ((uint8) S9xGetEnvelopeHeight (reg >> 4));
-		
-    default:
+		{
+			int32_t eVal = SoundData.channels [reg >> 4].envx;
+			return (eVal > 0x7F) ? 0x7F : (eVal < 0 ? 0 : eVal);
+		}
+	default:
 		break;
     }
-    return (byte);
+    return byte;
 }
 

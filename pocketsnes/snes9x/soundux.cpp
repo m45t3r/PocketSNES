@@ -318,7 +318,7 @@ void S9xSetEchoFeedback (int feedback)
 
 void S9xSetEchoDelay (int delay)
 {
-	SoundData.echo_buffer_size = (512 * delay * so.playback_rate) >> 15;
+	SoundData.echo_buffer_size = (512 * delay * so.playback_rate) / 32000;
 	SoundData.echo_buffer_size <<= 1;
 	if (SoundData.echo_buffer_size)
 		SoundData.echo_ptr %= SoundData.echo_buffer_size;
@@ -435,63 +435,11 @@ void S9xSetEnvelopeHeight (int channel, int level)
     }
 }
 
-int S9xGetEnvelopeHeight (int channel)
-{
-    if ((Settings.SoundEnvelopeHeightReading ||
-		SNESGameFixes.SoundEnvelopeHeightReading2) &&
-        SoundData.channels[channel].state != SOUND_SILENT &&
-        SoundData.channels[channel].state != SOUND_GAIN)
-    {
-        return (SoundData.channels[channel].envx);
-    }
-	
-    //siren fix from XPP
-    if (SNESGameFixes.SoundEnvelopeHeightReading2 &&
-        SoundData.channels[channel].state != SOUND_SILENT)
-    {
-        return (SoundData.channels[channel].envx);
-    }
-	
-    return (0);
-}
-
-#if 1
-void S9xSetSoundSample (int, uint16) 
-{
-}
-#else
-void S9xSetSoundSample (int channel, uint16 sample_number)
-{
-    register Channel *ch = &SoundData.channels[channel];
-	
-    if (ch->state != SOUND_SILENT && 
-		sample_number != ch->sample_number)
-    {
-		int keep = ch->state;
-		ch->state = SOUND_SILENT;
-		ch->sample_number = sample_number;
-		ch->loop = FALSE;
-		ch->needs_decode = TRUE;
-		ch->last_block = FALSE;
-		ch->previous [0] = ch->previous[1] = 0;
-		uint8 *dir = S9xGetSampleAddress (sample_number);
-		ch->block_pointer = READ_WORD (dir);
-		ch->sample_pointer = 0;
-		ch->state = keep;
-    }
-}
-#endif
-
 void S9xSetSoundFrequency (int channel, int hertz)  // hertz [0~64K<<1]
 {
 	if (SoundData.channels[channel].type == SOUND_NOISE)
 		hertz = NoiseFreq [APU.DSP [APU_FLG] & 0x1f];
 	SoundData.channels[channel].frequency = (hertz * so.freqbase) >> 11;
-	if (Settings.FixFrequency)
-	{
-		SoundData.channels[channel].frequency =
-			(unsigned long) (SoundData.channels[channel].frequency * 49 / 50);
-	}
 }
 
 void S9xSetSoundHertz (int channel, int hertz)
@@ -519,7 +467,7 @@ void DecodeBlock (Channel *ch)
     unsigned char shift;
     signed char sample1, sample2;
 
-    if (ch->block_pointer >= 0x10000 - 9)
+    if (ch->block_pointer > 0x10000 - 9)
     {
 		ch->last_block = TRUE;
 		ch->loop = FALSE;
