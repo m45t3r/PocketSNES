@@ -325,15 +325,6 @@ struct SSettings{
     /* Sound options */
     uint32 SoundPlaybackRate;
     bool8  TraceSoundDSP;
-#ifndef FOREVER_STEREO
-    bool8  Stereo;
-#endif
-#ifndef FOREVER_FORWARD_STEREO
-    bool8  ReverseStereo;
-#endif
-#ifndef FOREVER_16_BIT_SOUND
-    bool8  SixteenBitSound;
-#endif
     bool8  EightBitConsoleSound;  // due to caching, this needs S9xSetEightBitConsoleSound()
     int    SoundBufferSize;
     int    SoundMixInterval;

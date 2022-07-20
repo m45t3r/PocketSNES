@@ -157,7 +157,6 @@ int S9xAPUOPrint (char *buffer, uint16 Address);
 void S9xSetAPUControl (uint8 byte);
 void S9xSetAPUDSP (uint8 byte);
 uint8 S9xGetAPUDSP ();
-void S9xSetAPUTimer (uint16 Address, uint8 byte);
 bool8 S9xInitSound (int quality, bool8 stereo, int buffer_size);
 void S9xOpenCloseSoundTracingFile (bool8);
 void S9xPrintAPUState ();

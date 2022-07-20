@@ -17,7 +17,7 @@ INCLUDE = -I pocketsnes \
 		-I pocketsnes/include \
 		-I menu -I pocketsnes/linux -I pocketsnes/snes9x
 
-CFLAGS = $(INCLUDE) -DRC_OPTIMIZED -DGCW_ZERO -DGCW_JOYSTICK -D__LINUX__ -D__DINGUX__ -DFOREVER_16_BIT -DFOREVER_16_BIT_SOUND -DLAGFIX
+CFLAGS = $(INCLUDE) -DRC_OPTIMIZED -DGCW_ZERO -DGCW_JOYSTICK -D__LINUX__ -D__DINGUX__ -DFOREVER_16_BIT -DLAGFIX
 # CFLAGS += -ggdb3 -Og
 CFLAGS += -Ofast -fdata-sections -ffunction-sections -mips32r2 -mno-mips16 -mplt -mno-shared
 CFLAGS += -fomit-frame-pointer -fno-builtin -fno-common -flto=4 -fno-unroll-loops
@@ -68,7 +68,7 @@ endif
 	$(CMD)$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(CMD)$(CXX) $(CFLAGS) -c $< -o $@
+	$(CMD)$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY : clean
 clean :

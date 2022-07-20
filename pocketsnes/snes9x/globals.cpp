@@ -230,7 +230,6 @@ SoundStatus so;
 #endif
 
 int Echo [24000];
-int DummyEchoBuffer [SOUND_BUFFER_SIZE];
 int MixBuffer [SOUND_BUFFER_SIZE];
 int EchoBuffer [SOUND_BUFFER_SIZE];
 int FilterTaps [8];
@@ -314,7 +313,7 @@ long FilterValues[4][2] =
     {460, -208}
 };
 
-int NoiseFreq [32] = {
+int32 NoiseFreq [32] = {
     0, 16, 21, 25, 31, 42, 50, 63, 84, 100, 125, 167, 200, 250, 333,
     400, 500, 667, 800, 1000, 1300, 1600, 2000, 2700, 3200, 4000,
     5300, 6400, 8000, 10700, 16000, 32000

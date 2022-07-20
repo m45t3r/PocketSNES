@@ -120,10 +120,6 @@
 #define APUCheckOverflow() (IAPU._Overflow)
 #define APUCheckNegative() (IAPU._Zero & 0x80)
 
-#define APUClearFlags(f) (IAPU.Registers.P &= ~(f))
-#define APUSetFlags(f)   (IAPU.Registers.P |=  (f))
-#define APUCheckFlag(f)  (IAPU.Registers.P &   (f))
-
 typedef union
 {
 #ifdef LSB_FIRST
@@ -134,44 +130,27 @@ typedef union
     uint16 W;
 } YAndA;
 
-struct SAPURegisters{
-    uint8  P;
-    YAndA YA;
-    uint8  X;
-    uint8  S;
+struct SAPURegisters
+{
+    uint8   P;
+    YAndA   YA;
+    uint8   X;
+    uint8   S;
     uint16  PC;
 };
 
-// Needed by ILLUSION OF GAIA
-//#define ONE_APU_CYCLE 14
+/* Needed by ILLUSION OF GAIA */
 #define ONE_APU_CYCLE 21
 
-// Needed by all games written by the software company called Human
-//#define ONE_APU_CYCLE_HUMAN 17
-#define ONE_APU_CYCLE_HUMAN 21
-
-// 1.953us := 1.024065.54MHz
-
-#ifdef DEBUGGER
-#define APU_EXECUTE1() \
-{ \
-    if (APU.Flags & TRACE_FLAG) \
-	S9xTraceAPU ();\
-    APU.Cycles += S9xAPUCycles [*IAPU.PC]; \
-    (*S9xApuOpcodes[*IAPU.PC]) (); \
-}
-#else
 #define APU_EXECUTE1() \
 { \
     APU.Cycles += S9xAPUCycles [*IAPU.PC]; \
     (*S9xApuOpcodes[*IAPU.PC]) (); \
 }
-#endif
 
 #define APU_EXECUTE() \
 if (IAPU.APUExecuting) \
-{\
     while (APU.Cycles <= CPU.Cycles) \
-	APU_EXECUTE1(); \
-}
+       APU_EXECUTE1();
+
 #endif
