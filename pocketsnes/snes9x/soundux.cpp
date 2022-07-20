@@ -370,12 +370,7 @@ void S9xFixSoundAfterSnapshotLoad ()
 		SoundData.channels[i].needs_decode = TRUE;
 		S9xSetSoundFrequency (i, SoundData.channels[i].hertz);
 		SoundData.channels [i].envxx = SoundData.channels [i].envx << ENVX_SHIFT;
-		SoundData.channels [i].next_sample = 0;
-		SoundData.channels [i].interpolate = 0;
-		SoundData.channels [i].previous [0] = (int32) SoundData.channels [i].previous16 [0];
-		SoundData.channels [i].previous [1] = (int32) SoundData.channels [i].previous16 [1];
     }
-    IAPU.Scanline = 0;
 }
 
 void S9xSetFilterCoefficient (int tap, int value)
@@ -489,17 +484,14 @@ void S9xSetSoundSample (int channel, uint16 sample_number)
 
 void S9xSetSoundFrequency (int channel, int hertz)  // hertz [0~64K<<1]
 {
-    if (so.playback_rate)
-    {
-		if (SoundData.channels[channel].type == SOUND_NOISE)
-			hertz = NoiseFreq [APU.DSP [APU_FLG] & 0x1f];
-		SoundData.channels[channel].frequency = (hertz * so.freqbase) >> 11;
-		if (Settings.FixFrequency)
-		{
-			SoundData.channels[channel].frequency = 
-				(unsigned long) (SoundData.channels[channel].frequency * 49 / 50);
-		}
-    }
+	if (SoundData.channels[channel].type == SOUND_NOISE)
+		hertz = NoiseFreq [APU.DSP [APU_FLG] & 0x1f];
+	SoundData.channels[channel].frequency = (hertz * so.freqbase) >> 11;
+	if (Settings.FixFrequency)
+	{
+		SoundData.channels[channel].frequency =
+			(unsigned long) (SoundData.channels[channel].frequency * 49 / 50);
+	}
 }
 
 void S9xSetSoundHertz (int channel, int hertz)
@@ -918,12 +910,6 @@ void S9xMixSamples (uint16 *buffer, int sample_count)
 	int J;
 	int I;
 
-	if (so.mute_sound)
-	{
-		memset(buffer, 0, sample_count * sizeof(buffer [0]));
-		return;
-	}
-	
 	if (SoundData.echo_enable)
 		memset (EchoBuffer, 0, sample_count * sizeof (EchoBuffer [0]));
 	memset (MixBuffer, 0, sample_count * sizeof (MixBuffer [0]));
