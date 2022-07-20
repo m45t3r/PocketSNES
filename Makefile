@@ -68,7 +68,7 @@ endif
 	$(CMD)$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.cpp
-	$(CMD)$(CXX) $(CFLAGS) -c $< -o $@
+	$(CMD)$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY : clean
 clean :
