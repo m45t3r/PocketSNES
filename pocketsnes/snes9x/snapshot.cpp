@@ -377,17 +377,10 @@ static FreezeData SnapAPURegisters [] = {
 #define OFFSET(f) Offset(f,SSoundData *)
 
 static FreezeData SnapSoundData [] = {
-#ifndef FOREVER_FORWARD_STEREO
-    {OFFSET (master_volume_left), 2, INT_V},
-    {OFFSET (master_volume_right), 2, INT_V},
-    {OFFSET (echo_volume_left), 2, INT_V},
-    {OFFSET (echo_volume_right), 2, INT_V},
-#else
     {OFFSET (master_volume [0]), 2, INT_V},
     {OFFSET (master_volume [1]), 2, INT_V},
     {OFFSET (echo_volume [0]), 2, INT_V},
     {OFFSET (echo_volume [1]), 2, INT_V},
-#endif
     {OFFSET (echo_enable), 4, INT_V},
     {OFFSET (echo_feedback), 4, INT_V},
     {OFFSET (echo_ptr), 4, INT_V},
@@ -1577,9 +1570,6 @@ bool8 S9xUnfreezeZSNES (const char *filename)
 			APU.TimerEnabled [0] = (t [40] & 1) != 0;
 			APU.TimerEnabled [1] = (t [40] & 2) != 0;
 			APU.TimerEnabled [2] = (t [40] & 4) != 0;
-			S9xSetAPUTimer (0xfa, t [41]);
-			S9xSetAPUTimer (0xfb, t [42]);
-			S9xSetAPUTimer (0xfc, t [43]);
 			APU.Timer [0] = t [44];
 			APU.Timer [1] = t [45];
 			APU.Timer [2] = t [46];
