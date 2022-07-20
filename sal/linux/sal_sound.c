@@ -7,14 +7,14 @@
 // 48000 Hz maximum; 1/50 of a second; 3 frames to hold (2 plus a bit extra)
 #define BUFFER_SAMPLES (48000 / 50 * (BUFFER_FRAMES + 1))
 
-extern void S9xMixSamples (u8 *buffer, int sample_count);
+extern void S9xMixSamples (u16 *buffer, int sample_count);
 
 static SDL_AudioSpec audiospec;
 
 volatile static unsigned int ReadPos, WritePos;
 
 // 2 channels per sample (stereo); 2 bytes per sample-channel (16-bit)
-static uint8_t Buffer[BUFFER_SAMPLES * 2 * 2];
+static u16 Buffer[BUFFER_SAMPLES * 2 * 2];
 static u32 SamplesPerFrame, BytesPerSample;
 static u32 Muted; // S9xSetAudioMute(TRUE) gets undone after SNES Global Mute ends
 
@@ -49,23 +49,18 @@ static void sdl_audio_callback (void *userdata, Uint8 *stream, int len)
 	ReadPos = (LocalReadPos + SamplesRequested) % BUFFER_SAMPLES;
 }
 
-s32 sal_AudioInit(s32 rate, s32 bits, s32 stereo, s32 Hz)
+s32 sal_AudioInit(s32 rate, s32 bits, s32 Hz)
 {
 	int buffer = 1;
 	audiospec.freq = rate;
-	audiospec.channels = (stereo + 1);
+	audiospec.channels = 2;
 	audiospec.format = AUDIO_S16;
-
 	audiospec.samples = (rate / Hz);
-	if (!stereo && (audiospec.samples & 1))
-		audiospec.samples--;
+	audiospec.callback = sdl_audio_callback;
 
-	 
 	SamplesPerFrame = audiospec.samples;
 	BytesPerSample = audiospec.channels * (bits >> 3);
 
-
-	audiospec.callback = sdl_audio_callback;
 	//RS-97 fix, need to be power of 2
 	while (buffer < audiospec.samples)
 	{
