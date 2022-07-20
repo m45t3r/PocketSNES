@@ -77,6 +77,7 @@ void S9xGenerateSound (void)
 
 void S9xSetPalette ()
 {
+
 }
 
 void S9xExtraUsage ()
@@ -463,6 +464,7 @@ void S9xLoadSRAM (void)
 }
 
 static u32 LastAudioRate = 0;
+static u32 LastStereo = 0;
 static u32 LastHz = 0;
 
 static
@@ -478,17 +480,30 @@ int Run(int sound)
 	sal_TimerInit(Settings.FrameTime);
 
 	if (sound) {
+		/*
+		Settings.SoundPlaybackRate = mMenuOptions.soundRate;
+		Settings.Stereo = mMenuOptions.stereo ? TRUE : FALSE;
+		*/
+#ifndef FOREVER_16_BIT_SOUND
+		Settings.SixteenBitSound=true;
+#endif
+
 		if (LastAudioRate != mMenuOptions.soundRate ||
-			LastHz != Memory.ROMFramesPerSecond)
+			LastStereo != mMenuOptions.stereo ||
+			LastHz != (u32)Memory.ROMFramesPerSecond)
 		{
 			if (LastAudioRate != 0)
 			{
 				sal_AudioClose();
 			}
-			sal_AudioInit(mMenuOptions.soundRate, 16, Memory.ROMFramesPerSecond);
-			S9xInitSound(mMenuOptions.soundRate, TRUE, sal_AudioGetSamplesPerFrame() * sal_AudioGetBytesPerSample());
+			sal_AudioInit(mMenuOptions.soundRate, 16,
+						mMenuOptions.stereo, Memory.ROMFramesPerSecond);
+
+			S9xInitSound (mMenuOptions.soundRate,
+						mMenuOptions.stereo, sal_AudioGetSamplesPerFrame() * sal_AudioGetBytesPerSample());
 			S9xSetPlaybackRate(mMenuOptions.soundRate);
 			LastAudioRate = mMenuOptions.soundRate;
+			LastStereo = mMenuOptions.stereo;
 			LastHz = Memory.ROMFramesPerSecond;
 		}
 		sal_AudioSetMuted(0);
@@ -507,7 +522,7 @@ int Run(int sound)
 			sal_AudioGenerate(sal_AudioGetSamplesPerFrame() - SamplesDoneThisFrame);
 		SamplesDoneThisFrame = 0;
 		so.err_counter = 0;
-	}
+  	}
 
 	sal_AudioPause();
 
@@ -551,6 +566,7 @@ int SnesInit()
 
 	Settings.JoystickEnabled = FALSE;
 	Settings.SoundPlaybackRate = 44100;
+	Settings.Stereo = TRUE;
 	Settings.SoundBufferSize = 0;
 	Settings.CyclesPercentage = 100;
 	Settings.DisableSoundEcho = FALSE;
@@ -587,7 +603,7 @@ int SnesInit()
 	Settings.TurboSkipFrames = 15;
 	Settings.ThreadSound = FALSE;
 	Settings.SoundSync = 1;
-	//Settings.FixFrequency = TRUE;
+	Settings.FixFrequency = TRUE;
 	//Settings.NoPatch = true;		
 
 	Settings.SuperFX = TRUE;
